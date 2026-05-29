@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ - کیلنڈر میں PDF ڈاؤن لوڈ</title>
+  <title>کیس مینجمنٹ - کیلنڈر میں تمام سماعتوں کی ڈاؤن لوڈ</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,7 +64,8 @@
     .calendar-buttons { display: flex; gap: 6px; }
     .open-case-btn-small, .pdf-case-btn-small { background: #2c5f2d; color: white; border: none; border-radius: 30px; padding: 4px 10px; cursor: pointer; font-size: 0.7rem; }
     .pdf-case-btn-small { background: #7b2c1a; }
-    .calendar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2d2b6; }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2d2b6; flex-wrap: wrap; gap: 8px; }
+    .download-all-btn { background: #2c5f2d; color: white; border: none; border-radius: 30px; padding: 5px 12px; font-size: 0.7rem; cursor: pointer; }
     @media (max-width: 480px) { .case-top-row { flex-direction: column; align-items: flex-start; } .case-badge { align-self: flex-start; } .btn { white-space: normal; flex: 1; text-align: center; } .calendar-item { flex-direction: column; align-items: flex-start; } .calendar-buttons { margin-top: 5px; } }
     @media print { .header, .tabs, .action-buttons, .back-btn, .calendar-icon, .delete-record, .btn, .modal-overlay, .toast, .btn-add, .search-box { display: none !important; } }
   </style>
@@ -74,7 +75,7 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>جج · کیس قسم · تلاش · کیلنڈر میں PDF</p>
+    <p>جج · کیس قسم · تلاش · تمام سماعتیں ڈاؤن لوڈ</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
@@ -123,7 +124,8 @@
     pendingDeleteCaseId: null,
     editCaseId: null,
     selectedCaseIdForRecord: null,
-    searchQuery: ''
+    searchQuery: '',
+    currentCalendarDate: null  // store last selected date for download
   };
 
   // Helpers
@@ -234,7 +236,7 @@
 
   window.backToList = function() { app.currentView = 'list'; app.selectedCaseId = null; document.getElementById('detailView').style.display = 'none'; document.getElementById('caseListView').style.display = 'block'; renderCaseList(); };
 
-  // PDF print function (used both in detail and calendar)
+  // PDF print for single case
   window.printCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -243,7 +245,7 @@
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>کیس ${c.filenum}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Noto Nastaliq Urdu',sans-serif;padding:20px;max-width:700px;margin:0 auto;} .header{text-align:center;margin-bottom:20px;} .info{background:#fef8ef;padding:12px;border-radius:16px;margin-bottom:20px;} table{width:100%;} td{padding:6px;} .footer{text-align:center;margin-top:30px;font-size:0.7rem;}</style></head><body>
       <div class="header"><h1>⚖️ کیس کی تفصیل</h1><p>تاریخ: ${new Date().toLocaleDateString('ur-PK')}</p></div>
-      <div class="info"><h3>کیس کی معلومات</h3><tr>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum]].map(([l,v])=>`<tr><td style="padding:6px;font-weight:bold;">${l}:</td><td>${escapeHtml(v||'—')}</td></tr>`).join('')}</table></div>
+      <div class="info"><h3>کیس کی معلومات</h3><table>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum]].map(([l,v])=>`<tr><td style="padding:6px;font-weight:bold;">${l}:</td><td>${escapeHtml(v||'—')}</td></tr>`).join('')}</table></div>
       <div><h3>📋 تاریخوں کی تفصیل</h3>${recordsHtml || '<p>کوئی تاریخ نہیں</p>'}</div>
       <div class="footer">کیس مینجمنٹ سسٹم</div>
     </body></html>`);
@@ -343,17 +345,32 @@
     app.pendingDeleteCaseId = null;
   }
 
-  // Calendar with PDF download for each case
+  // Calendar with download all hearings for selected date
   function openCalendar() { const today = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = today; showHearingsForDate(today); document.getElementById('calendarModal').classList.add('open'); }
+  
   function showHearingsForDate(date) {
+    app.currentCalendarDate = date;
     const resultsDiv = document.getElementById('calendarResults');
     const hearings = [];
-    app.cases.forEach(c => { c.records.forEach(rec => { if (rec.date === date) hearings.push({ caseId: c.id, caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`, filenum: c.filenum }); }); });
+    app.cases.forEach(c => {
+      c.records.forEach(rec => {
+        if (rec.date === date) {
+          hearings.push({
+            caseId: c.id,
+            caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`,
+            filenum: c.filenum,
+            judge: c.judge,
+            caseType: c.casetype,
+            note: rec.note
+          });
+        }
+      });
+    });
     if (!hearings.length) { resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;">📭 اس تاریخ پر کوئی سماعت نہیں</div>'; return; }
     resultsDiv.innerHTML = `
       <div class="calendar-header">
         <span>📋 کل سماعتیں: ${hearings.length}</span>
-        <span style="font-size:0.7rem;">${new Date(date).toLocaleDateString('ur-PK')}</span>
+        <button class="download-all-btn" onclick="downloadAllHearingsForDate()">📥 تمام سماعتیں ڈاؤن لوڈ کریں</button>
       </div>
       ${hearings.map(h => `
         <div class="calendar-item">
@@ -367,9 +384,52 @@
       `).join('')}
     `;
   }
-  // Wrapper to call PDF from calendar
+  
+  // Download all hearings for current selected date as CSV
+  window.downloadAllHearingsForDate = () => {
+    const date = app.currentCalendarDate;
+    if (!date) { showToast('پہلے کوئی تاریخ منتخب کریں'); return; }
+    const hearings = [];
+    app.cases.forEach(c => {
+      c.records.forEach(rec => {
+        if (rec.date === date) {
+          hearings.push({
+            caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`,
+            filenum: c.filenum || '—',
+            judge: c.judge || '—',
+            caseType: c.casetype || '—',
+            hearingDate: rec.date,
+            note: rec.note || '—'
+          });
+        }
+      });
+    });
+    if (hearings.length === 0) { showToast('اس تاریخ پر کوئی سماعت نہیں'); return; }
+    // Prepare CSV content
+    const headers = ['کیس کا نام', 'فائل نمبر', 'جج', 'کیس قسم', 'تاریخ سماعت (dd/mm/yyyy)', 'نوٹ'];
+    const rows = hearings.map(h => [
+      h.caseName,
+      h.filenum,
+      h.judge,
+      h.caseType,
+      new Date(h.hearingDate).toLocaleDateString('en-GB'),
+      h.note
+    ]);
+    const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', `Hearings_${date}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('تمام سماعتیں ڈاؤن لوڈ ہو رہی ہیں');
+  };
+  
   window.printCasePDFFromCalendar = (caseId) => {
-    closeAllModals(); // close calendar modal before printing
+    closeAllModals();
     printCasePDF(caseId);
   };
   window.openCaseFromCalendar = (caseId) => {
