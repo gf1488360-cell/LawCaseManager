@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ - کیس قسم کا سلیکٹر</title>
+  <title>کیس مینجمنٹ - مکمل کیس ٹائپ سلیکٹر</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -75,7 +75,7 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>کیس قسم سلیکٹر · جج · تلاش · تمام سماعتیں ڈاؤن لوڈ</p>
+    <p>60+ کیس اقسام · ٹائپ کریں یا منتخب کریں · تمام سماعتیں ڈاؤن لوڈ</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
@@ -83,7 +83,6 @@
   </div>
   <button id="addNewCaseBtn" class="btn-add">➕ نیا کیس شامل کریں</button>
   
-  <!-- Search Box -->
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="🔍 مدعی یا مدعا علیہ کے نام سے تلاش کریں">
   </div>
@@ -92,34 +91,67 @@
   <div id="detailView" style="display: none;"></div>
 </div>
 
-<!-- Modals -->
+<!-- Modal: Add/Edit Case with datalist for case type -->
 <div id="caseModal" class="modal-overlay"><div class="modal-card"><div class="modal-title" id="caseModalTitle">نیا کیس</div>
 <input type="text" id="plaintiff" placeholder="مدعی (Plaintiff)"><input type="text" id="defendant" placeholder="مدعا علیہ (Defendant)">
 <input type="text" id="judge" placeholder="جج کا نام (Judge)"><input type="text" id="representing" placeholder="مدافع کی طرف سے">
-<!-- Case Type Dropdown with 20+ Urdu options -->
-<select id="casetype">
-  <option value="دیوانی مقدمہ">دیوانی مقدمہ (Civil Suit)</option>
-  <option value="فوجداری مقدمہ">فوجداری مقدمہ (Criminal Case)</option>
-  <option value="خاندانی مقدمہ">خاندانی مقدمہ (Family Suit)</option>
-  <option value="دیوانی اپیل">دیوانی اپیل (Civil Appeal)</option>
-  <option value="ثانوی اپیل">ثانوی اپیل (Second Appeal)</option>
-  <option value="ہائی کورٹ اپیل">ہائی کورٹ اپیل (High Court Appeal)</option>
-  <option value="انٹرا کورٹ اپیل">انٹرا کورٹ اپیل (Intra Court Appeal)</option>
-  <option value="آئینی درخواست">آئینی درخواست (Constitutional Petition)</option>
-  <option value="رٹ درخواست">رٹ درخواست (Writ Petition)</option>
-  <option value="دیوانی نظرثانی">دیوانی نظرثانی (Civil Revision)</option>
-  <option value="فوجداری نظرثانی">فوجداری نظرثانی (Criminal Revision)</option>
-  <option value="ضمانت درخواست">ضمانت درخواست (Bail Application)</option>
-  <option value="تعمیل درخواست">تعمیل درخواست (Execution Petition)</option>
-  <option value="متفرق درخواست">متفرق درخواست (Misc Application)</option>
-  <option value="دیوانی اصل">دیوانی اصل (Civil Original)</option>
-  <option value="فوجداری اصل">فوجداری اصل (Criminal Original)</option>
-  <option value="دیہاڑی مقدمہ">دیہاڑی مقدمہ (Rent Case)</option>
-  <option value="ٹریفک مقدمہ">ٹریفک مقدمہ (Traffic Case)</option>
-  <option value="خدمت مقدمہ">خدمت مقدمہ (Service Case)</option>
-  <option value="دیوانی درخواست">دیوانی درخواست (Civil Misc)</option>
-  <option value="دیگر">دیگر (Other)</option>
-</select>
+<!-- Case Type: input with datalist for free typing + dropdown suggestions -->
+<input type="text" id="casetype" list="caseTypesList" placeholder="کیس کی قسم (ٹائپ کریں یا منتخب کریں)" autocomplete="off">
+<datalist id="caseTypesList">
+  <!-- Civil & General -->
+  <option value="دیوانی مقدمہ (Civil Suit)">دیوانی مقدمہ (Civil Suit)</option>
+  <option value="فوجداری مقدمہ (Criminal Case)">فوجداری مقدمہ (Criminal Case)</option>
+  <option value="دیوانی اپیل (Civil Appeal)">دیوانی اپیل (Civil Appeal)</option>
+  <option value="ثانوی اپیل (Second Appeal)">ثانوی اپیل (Second Appeal)</option>
+  <option value="ہائی کورٹ اپیل (High Court Appeal)">ہائی کورٹ اپیل (High Court Appeal)</option>
+  <option value="انٹرا کورٹ اپیل (Intra Court Appeal)">انٹرا کورٹ اپیل (Intra Court Appeal)</option>
+  <option value="آئینی درخواست (Constitutional Petition)">آئینی درخواست (Constitutional Petition)</option>
+  <option value="رٹ درخواست (Writ Petition)">رٹ درخواست (Writ Petition)</option>
+  <option value="دیوانی نظرثانی (Civil Revision)">دیوانی نظرثانی (Civil Revision)</option>
+  <option value="فوجداری نظرثانی (Criminal Revision)">فوجداری نظرثانی (Criminal Revision)</option>
+  <option value="ضمانت درخواست (Bail Application)">ضمانت درخواست (Bail Application)</option>
+  <option value="دیوانی اصل (Civil Original)">دیوانی اصل (Civil Original)</option>
+  <option value="فوجداری اصل (Criminal Original)">فوجداری اصل (Criminal Original)</option>
+  
+  <!-- Family Cases -->
+  <option value="خلع (Khula / Dissolution of Marriage)">خلع (Khula / Dissolution of Marriage)</option>
+  <option value="طلاق (Divorce / Talaq)">طلاق (Divorce / Talaq)</option>
+  <option value="نان نفقہ (Maintenance)">نان نفقہ (Maintenance)</option>
+  <option value="جہیز و تحائف (Dowry Articles)">جہیز و تحائف (Dowry Articles)</option>
+  <option value="حق مہر (Dower)">حق مہر (Dower)</option>
+  <option value="بچوں کی حوالگی (Custody of Children)">بچوں کی حوالگی (Custody of Children)</option>
+  <option value="سرپرستی (Guardianship)">سرپرستی (Guardianship)</option>
+  <option value="ملاقات کے حقوق (Visitation Rights)">ملاقات کے حقوق (Visitation Rights)</option>
+  <option value="ازدواجی تعلقات کی بحالی (Restitution of Conjugal Rights)">ازدواجی تعلقات کی بحالی (Restitution of Conjugal Rights)</option>
+  <option value="جھوٹے نکاح کا دعویٰ (Jactitation of Marriage)">جھوٹے نکاح کا دعویٰ (Jactitation of Marriage)</option>
+  <option value="طلاق کے بعد بچوں کے اخراجات (Child Maintenance After Divorce)">طلاق کے بعد بچوں کے اخراجات (Child Maintenance After Divorce)</option>
+  
+  <!-- Property & Land -->
+  <option value="تقسیم جائیداد (Partition Suit)">تقسیم جائیداد (Partition Suit)</option>
+  <option value="قبضہ (Possession Suit)">قبضہ (Possession Suit)</option>
+  <option value="معاہدہ پر عملدرآمد (Specific Performance)">معاہدہ پر عملدرآمد (Specific Performance)</option>
+  <option value="دعویٰ شفعہ (Pre-emption Suit)">دعویٰ شفعہ (Pre-emption Suit)</option>
+  <option value="کرایہ داری (Rent Case)">کرایہ داری (Rent Case)</option>
+  <option value="زرعی اراضی (Land Revenue Case)">زرعی اراضی (Land Revenue Case)</option>
+  <option value="مشترکہ جائیداد کی تقسیم">مشترکہ جائیداد کی تقسیم</option>
+  
+  <!-- Other Civil -->
+  <option value="اعلانیہ دعویٰ (Suit for Declaration)">اعلانیہ دعویٰ (Suit for Declaration)</option>
+  <option value="حکم امتناعی (Permanent Injunction)">حکم امتناعی (Permanent Injunction)</option>
+  <option value="لازمی حکم (Mandatory Injunction)">لازمی حکم (Mandatory Injunction)</option>
+  <option value="رقم کی وصولی (Recovery Suit)">رقم کی وصولی (Recovery Suit)</option>
+  <option value="دستاویز منسوخی (Cancellation of Document)">دستاویز منسوخی (Cancellation of Document)</option>
+  <option value="نقصان (Damages Suit)">نقصان (Damages Suit)</option>
+  <option value="توہین (Defamation Suit)">توہین (Defamation Suit)</option>
+  <option value="وراثت (Inheritance / Succession)">وراثت (Inheritance / Succession)</option>
+  <option value="بچے کی قانونی حیثیت (Legitimacy of Child)">بچے کی قانونی حیثیت (Legitimacy of Child)</option>
+  <option value="گود لینے کے معاملات (Adoption Guardianship)">گود لینے کے معاملات (Adoption Guardianship)</option>
+  <option value="ٹریڈ مارک / کاپی رائٹ (Trademark / Copyright)">ٹریڈ مارک / کاپی رائٹ (Trademark / Copyright)</option>
+  <option value="سروس معاملات (Service Matter)">سروس معاملات (Service Matter)</option>
+  <option value="صارفین کا تحفظ (Consumer Protection)">صارفین کا تحفظ (Consumer Protection)</option>
+  <option value="انتخابی درخواست (Election Petition)">انتخابی درخواست (Election Petition)</option>
+  <option value="دیگر (Other - لکھیں)">دیگر (Other - لکھیں)</option>
+</datalist>
 <div style="display:flex;gap:8px;"><input type="text" id="code" placeholder="کوڈ" style="flex:1"><input type="text" id="phone" placeholder="فون" dir="ltr" style="flex:1"></div>
 <input type="text" id="filenum" placeholder="فائل نمبر"><textarea id="statusNote" style="display:none;"></textarea>
 <div class="flex-btns"><button class="btn btn-secondary" id="cancelCaseBtn">منسوخ</button><button class="btn btn-primary" id="saveCaseBtn">محفوظ کریں</button></div></div></div>
@@ -152,43 +184,7 @@
     currentCalendarDate: null
   };
 
-  // Helper to get case type dropdown value (handles custom values)
-  function getCaseTypeFromDropdown() {
-    const select = document.getElementById('casetype');
-    const selectedValue = select.value;
-    if (selectedValue === 'دیگر') {
-      // For "Other", we can allow custom text input? For simplicity, we'll use the selected value.
-      // But we can also add a hidden input. Since the user wants a selector, we'll store the exact text.
-      return selectedValue;
-    }
-    return selectedValue;
-  }
-
-  function setCaseTypeDropdown(value) {
-    const select = document.getElementById('casetype');
-    // Check if value exists in options
-    let optionExists = false;
-    for (let i = 0; i < select.options.length; i++) {
-      if (select.options[i].value === value) {
-        select.selectedIndex = i;
-        optionExists = true;
-        break;
-      }
-    }
-    if (!optionExists && value) {
-      // If not found, add it as an option temporarily or set to "دیگر"
-      // For simplicity, set to "دیگر" and also store original somewhere? But we want to keep the original value.
-      // Better to add a custom option dynamically.
-      const newOption = document.createElement('option');
-      newOption.value = value;
-      newOption.text = value + ' (محفوظ شدہ)';
-      select.add(newOption);
-      select.value = value;
-    } else if (!value) {
-      select.value = 'دیوانی مقدمہ';
-    }
-  }
-
+  // Helpers
   function getMonthOptions() {
     const months = [];
     const now = new Date();
@@ -203,16 +199,16 @@
     const months = getMonthOptions();
     sel.innerHTML = months.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
   }
-  function saveData() { localStorage.setItem('case_system_full', JSON.stringify(app.cases)); }
+  function saveData() { localStorage.setItem('case_system_final_v2', JSON.stringify(app.cases)); }
   function loadData() {
-    const raw = localStorage.getItem('case_system_full');
+    const raw = localStorage.getItem('case_system_final_v2');
     if (raw) {
       app.cases = JSON.parse(raw);
       app.cases.forEach(c => { if (!c.records) c.records = []; if (!c.status) c.status = 'active'; if (!c.representing) c.representing = ''; if (!c.judge) c.judge = ''; });
     } else {
       app.cases = [{
         id: 'c1', plaintiff: 'احمد علی', defendant: 'محمد رضا', judge: 'جسٹس عامر حسین', representing: 'مسٹر خالد وکیل',
-        casetype: 'دیوانی مقدمہ', code: '101', phone: '03001234567', filenum: '2024/01', status_note: '', status: 'active',
+        casetype: 'دیوانی مقدمہ (Civil Suit)', code: '101', phone: '03001234567', filenum: '2024/01', status_note: '', status: 'active',
         records: [
           { id: 'r1', date: '2024-01-10', month: '2024-01', note: 'پہلی سماعت - ملتوی' },
           { id: 'r2', date: '2024-02-15', month: '2024-02', note: 'دوسری سماعت - دلائل' },
@@ -226,6 +222,7 @@
   function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
   function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
 
+  // Filter cases
   function getFilteredCases() {
     let filtered = app.cases.filter(c => c.status === app.currentTab);
     if (app.searchQuery.trim()) {
@@ -295,6 +292,7 @@
 
   window.backToList = function() { app.currentView = 'list'; app.selectedCaseId = null; document.getElementById('detailView').style.display = 'none'; document.getElementById('caseListView').style.display = 'block'; renderCaseList(); };
 
+  // PDF print
   window.printCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -310,12 +308,13 @@
     w.document.close(); w.focus(); w.print(); showToast('پرنٹ ڈائیلاگ کھل رہا ہے');
   };
 
+  // Add/Edit case with datalist handling
   function openAddCaseModal() {
     app.editCaseId = null;
     document.getElementById('caseModalTitle').innerText = 'نیا کیس';
     document.getElementById('plaintiff').value = ''; document.getElementById('defendant').value = '';
     document.getElementById('judge').value = ''; document.getElementById('representing').value = '';
-    setCaseTypeDropdown('دیوانی مقدمہ');
+    document.getElementById('casetype').value = '';
     document.getElementById('code').value = ''; document.getElementById('phone').value = ''; document.getElementById('filenum').value = '';
     document.getElementById('caseModal').classList.add('open');
   }
@@ -328,7 +327,7 @@
     document.getElementById('defendant').value = c.defendant || '';
     document.getElementById('judge').value = c.judge || '';
     document.getElementById('representing').value = c.representing || '';
-    setCaseTypeDropdown(c.casetype || 'دیوانی مقدمہ');
+    document.getElementById('casetype').value = c.casetype || '';
     document.getElementById('code').value = c.code || '';
     document.getElementById('phone').value = c.phone || '';
     document.getElementById('filenum').value = c.filenum || '';
@@ -342,12 +341,13 @@
       plaintiff, defendant,
       judge: document.getElementById('judge').value.trim(),
       representing: document.getElementById('representing').value.trim(),
-      casetype: getCaseTypeFromDropdown(),
+      casetype: document.getElementById('casetype').value.trim(),
       code: document.getElementById('code').value.trim(),
       phone: document.getElementById('phone').value.trim(),
       filenum: document.getElementById('filenum').value.trim(),
       status_note: '', status: 'active', records: []
     };
+    if (!data.casetype) data.casetype = 'دیگر';
     if (app.editCaseId) {
       const idx = app.cases.findIndex(c => c.id === app.editCaseId);
       if (idx !== -1) { app.cases[idx] = { ...app.cases[idx], ...data, records: app.cases[idx].records }; showToast('کیس اپ ڈیٹ'); }
@@ -401,6 +401,7 @@
     app.pendingDeleteCaseId = null;
   }
 
+  // Calendar
   function openCalendar() { const today = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = today; showHearingsForDate(today); document.getElementById('calendarModal').classList.add('open'); }
   function showHearingsForDate(date) {
     app.currentCalendarDate = date;
@@ -409,7 +410,7 @@
     app.cases.forEach(c => {
       c.records.forEach(rec => {
         if (rec.date === date) {
-          hearings.push({ caseId: c.id, caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`, filenum: c.filenum, judge: c.judge, caseType: c.casetype, note: rec.note });
+          hearings.push({ caseId: c.id, caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`, filenum: c.filenum });
         }
       });
     });
