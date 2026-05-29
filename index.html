@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ - تلاش کے ساتھ</title>
+  <title>کیس مینجمنٹ - مکمل نظام</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -58,9 +58,12 @@
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1f2a1b; color: #faf0dd; padding: 8px 20px; border-radius: 40px; font-size: 0.75rem; transition: 0.2s; z-index: 1000; white-space: nowrap; }
     .toast.show { transform: translateX(-50%) translateY(0); }
     .calendar-list { max-height: 400px; overflow-y: auto; }
-    .calendar-item { background: #fef5e9; border-radius: 20px; padding: 12px; margin-bottom: 10px; border-right: 4px solid #7b2c1a; }
-    .open-case-btn { background: #2c5f2d; color: white; border: none; border-radius: 30px; padding: 5px 12px; margin-top: 8px; cursor: pointer; font-size: 0.7rem; }
-    @media (max-width: 480px) { .case-top-row { flex-direction: column; align-items: flex-start; } .case-badge { align-self: flex-start; } .btn { white-space: normal; flex: 1; text-align: center; } }
+    .calendar-item { background: #fef5e9; border-radius: 20px; padding: 10px 12px; margin-bottom: 8px; border-right: 3px solid #7b2c1a; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .calendar-item .case-name-small { font-weight: 600; font-size: 0.85rem; flex: 2; }
+    .calendar-item .case-file-small { font-size: 0.7rem; color: #8b6b48; }
+    .open-case-btn-small { background: #2c5f2d; color: white; border: none; border-radius: 30px; padding: 4px 10px; cursor: pointer; font-size: 0.7rem; }
+    .calendar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2d2b6; }
+    @media (max-width: 480px) { .case-top-row { flex-direction: column; align-items: flex-start; } .case-badge { align-self: flex-start; } .btn { white-space: normal; flex: 1; text-align: center; } .calendar-item { flex-direction: column; align-items: flex-start; } }
     @media print { .header, .tabs, .action-buttons, .back-btn, .calendar-icon, .delete-record, .btn, .modal-overlay, .toast, .btn-add, .search-box { display: none !important; } }
   </style>
 </head>
@@ -69,7 +72,7 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>جج · کیس قسم · تلاش</p>
+    <p>جج · کیس قسم · تلاش · کیلنڈر</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
@@ -86,7 +89,7 @@
   <div id="detailView" style="display: none;"></div>
 </div>
 
-<!-- Modals -->
+<!-- Modals (same as before) -->
 <div id="caseModal" class="modal-overlay"><div class="modal-card"><div class="modal-title" id="caseModalTitle">نیا کیس</div>
 <input type="text" id="plaintiff" placeholder="مدعی (Plaintiff)"><input type="text" id="defendant" placeholder="مدعا علیہ (Defendant)">
 <input type="text" id="judge" placeholder="جج کا نام (Judge)"><input type="text" id="representing" placeholder="مدافع کی طرف سے">
@@ -118,7 +121,7 @@
     pendingDeleteCaseId: null,
     editCaseId: null,
     selectedCaseIdForRecord: null,
-    searchQuery: ''   // new
+    searchQuery: ''
   };
 
   // Helpers
@@ -159,27 +162,20 @@
   function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
   function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
 
-  // Filter cases based on currentTab and searchQuery
+  // Filter cases with search
   function getFilteredCases() {
     let filtered = app.cases.filter(c => c.status === app.currentTab);
     if (app.searchQuery.trim()) {
-      const query = app.searchQuery.trim().toLowerCase();
-      filtered = filtered.filter(c => 
-        (c.plaintiff && c.plaintiff.toLowerCase().includes(query)) ||
-        (c.defendant && c.defendant.toLowerCase().includes(query))
-      );
+      const q = app.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(c => (c.plaintiff && c.plaintiff.toLowerCase().includes(q)) || (c.defendant && c.defendant.toLowerCase().includes(q)));
     }
     return filtered;
   }
 
-  // Render case list (with search)
   function renderCaseList() {
     const container = document.getElementById('caseListContainer');
     const filtered = getFilteredCases();
-    if (!filtered.length) {
-      container.innerHTML = '<div class="empty-msg">📭 کوئی کیس نہیں ملا</div>';
-      return;
-    }
+    if (!filtered.length) { container.innerHTML = '<div class="empty-msg">📭 کوئی کیس نہیں ملا</div>'; return; }
     container.innerHTML = filtered.map(c => `
       <div class="case-item" onclick="openCaseDetail('${c.id}')">
         <div class="case-top-row"><span class="case-name">${escapeHtml(c.plaintiff||'?')} vs ${escapeHtml(c.defendant||'?')}</span><span class="case-badge">${c.filenum||'فائل'}</span></div>
@@ -188,18 +184,8 @@
     `).join('');
   }
 
-  // Update search and re-render
-  function updateSearch() {
-    app.searchQuery = document.getElementById('searchInput').value;
-    if (app.currentView === 'list') {
-      renderCaseList();
-    } else {
-      // If detail view is open, we don't re-render the list until back
-      // But we can still store the search query
-    }
-  }
+  function updateSearch() { app.searchQuery = document.getElementById('searchInput').value; if (app.currentView === 'list') renderCaseList(); }
 
-  // Open case detail
   window.openCaseDetail = (id) => {
     const c = app.cases.find(x => x.id === id);
     if (!c) return;
@@ -244,13 +230,7 @@
     document.getElementById('detailView').style.display = 'block';
   }
 
-  window.backToList = function() {
-    app.currentView = 'list';
-    app.selectedCaseId = null;
-    document.getElementById('detailView').style.display = 'none';
-    document.getElementById('caseListView').style.display = 'block';
-    renderCaseList(); // re-render with current search
-  };
+  window.backToList = function() { app.currentView = 'list'; app.selectedCaseId = null; document.getElementById('detailView').style.display = 'none'; document.getElementById('caseListView').style.display = 'block'; renderCaseList(); };
 
   // PDF print
   window.printCasePDF = (caseId) => {
@@ -361,14 +341,26 @@
     app.pendingDeleteCaseId = null;
   }
 
-  // Calendar
+  // Calendar - improved compact view with total count
   function openCalendar() { const today = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = today; showHearingsForDate(today); document.getElementById('calendarModal').classList.add('open'); }
   function showHearingsForDate(date) {
     const resultsDiv = document.getElementById('calendarResults');
     const hearings = [];
-    app.cases.forEach(c => { c.records.forEach(rec => { if (rec.date === date) hearings.push({ caseId: c.id, caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`, judge: c.judge, caseType: c.casetype, filenum: c.filenum, note: rec.note, representing: c.representing }); }); });
+    app.cases.forEach(c => { c.records.forEach(rec => { if (rec.date === date) hearings.push({ caseId: c.id, caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`, filenum: c.filenum }); }); });
     if (!hearings.length) { resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;">📭 اس تاریخ پر کوئی سماعت نہیں</div>'; return; }
-    resultsDiv.innerHTML = hearings.map(h => `<div class="calendar-item"><div style="font-weight:700;">⚖️ ${escapeHtml(h.caseName)}</div>${h.judge ? `<div>جج: ${escapeHtml(h.judge)}</div>` : ''}${h.caseType ? `<div>کیس قسم: ${escapeHtml(h.caseType)}</div>` : ''}<div>فائل: ${escapeHtml(h.filenum)}</div><div>📌 ${escapeHtml(h.note)}</div><button class="open-case-btn" onclick="openCaseFromCalendar('${h.caseId}')">⚖️ کیس کھولیں</button></div>`).join('');
+    resultsDiv.innerHTML = `
+      <div class="calendar-header">
+        <span>📋 کل سماعتیں: ${hearings.length}</span>
+        <span style="font-size:0.7rem;">${new Date(date).toLocaleDateString('ur-PK')}</span>
+      </div>
+      ${hearings.map(h => `
+        <div class="calendar-item">
+          <span class="case-name-small">⚖️ ${escapeHtml(h.caseName)}</span>
+          <span class="case-file-small">${escapeHtml(h.filenum)}</span>
+          <button class="open-case-btn-small" onclick="openCaseFromCalendar('${h.caseId}')">کیس کھولیں</button>
+        </div>
+      `).join('')}
+    `;
   }
   window.openCaseFromCalendar = (caseId) => {
     closeAllModals();
@@ -376,14 +368,13 @@
     if (c) { app.currentView = 'detail'; app.selectedCaseId = caseId; document.getElementById('caseListView').style.display = 'none'; renderDetailView(c); showToast('کیس کھول دیا گیا'); } else showToast('کیس نہیں ملا');
   };
 
-  // Tab switching
   function setTab(status) {
     app.currentTab = status;
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.status === status));
     if (app.currentView === 'list') renderCaseList(); else backToList();
   }
 
-  // Initialize
+  // Event listeners
   document.addEventListener('DOMContentLoaded', () => {
     loadData(); renderCaseList();
     document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.status)));
@@ -398,9 +389,7 @@
     document.getElementById('closeCalendarBtn').onclick = () => document.getElementById('calendarModal').classList.remove('open');
     document.getElementById('todayBtn').onclick = () => { const d = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = d; showHearingsForDate(d); };
     document.getElementById('searchCalendarBtn').onclick = () => { const d = document.getElementById('calendarDatePicker').value; if (d) showHearingsForDate(d); };
-    // Search input event
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', () => { updateSearch(); });
+    document.getElementById('searchInput').addEventListener('input', () => updateSearch());
   });
 </script>
 </body>
