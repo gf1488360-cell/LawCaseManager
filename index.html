@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ - مکمل نظام</title>
+  <title>کیس مینجمنٹ - تلاش کے ساتھ</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,7 +16,9 @@
     .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
     .tab { flex: 1; text-align: center; padding: 10px 8px; background: #e8dfd1; border-radius: 40px; font-weight: 700; cursor: pointer; color: #4a3a26; font-size: 0.85rem; }
     .tab.active { background: #7b2c1a; color: white; }
-    .btn-add { background: #2c5f2d; color: white; border: none; padding: 10px 18px; border-radius: 40px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.85rem; width: 100%; text-align: center; margin-bottom: 16px; }
+    .btn-add { background: #2c5f2d; color: white; border: none; padding: 10px 18px; border-radius: 40px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.85rem; width: 100%; text-align: center; margin-bottom: 12px; }
+    .search-box { margin-bottom: 16px; }
+    .search-box input { width: 100%; padding: 10px 16px; border-radius: 40px; border: 1.5px solid #e2d2b6; background: white; font-family: inherit; font-size: 0.85rem; text-align: right; }
     .case-list { display: flex; flex-direction: column; gap: 12px; }
     .case-item { background: white; border-radius: 24px; padding: 14px; border-right: 5px solid #2c6e2c; cursor: pointer; display: flex; flex-direction: column; gap: 10px; }
     .case-top-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -59,7 +61,7 @@
     .calendar-item { background: #fef5e9; border-radius: 20px; padding: 12px; margin-bottom: 10px; border-right: 4px solid #7b2c1a; }
     .open-case-btn { background: #2c5f2d; color: white; border: none; border-radius: 30px; padding: 5px 12px; margin-top: 8px; cursor: pointer; font-size: 0.7rem; }
     @media (max-width: 480px) { .case-top-row { flex-direction: column; align-items: flex-start; } .case-badge { align-self: flex-start; } .btn { white-space: normal; flex: 1; text-align: center; } }
-    @media print { .header, .tabs, .action-buttons, .back-btn, .calendar-icon, .delete-record, .btn, .modal-overlay, .toast, .btn-add { display: none !important; } }
+    @media print { .header, .tabs, .action-buttons, .back-btn, .calendar-icon, .delete-record, .btn, .modal-overlay, .toast, .btn-add, .search-box { display: none !important; } }
   </style>
 </head>
 <body>
@@ -67,13 +69,19 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>جج · کیس قسم · مدافع · مکمل نظام</p>
+    <p>جج · کیس قسم · تلاش</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
     <div class="tab" data-status="closed">بند کیسز</div>
   </div>
   <button id="addNewCaseBtn" class="btn-add">➕ نیا کیس شامل کریں</button>
+  
+  <!-- Search Box -->
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="🔍 مدعی یا مدعا علیہ کے نام سے تلاش کریں">
+  </div>
+  
   <div id="caseListView"><div id="caseListContainer" class="case-list"></div></div>
   <div id="detailView" style="display: none;"></div>
 </div>
@@ -109,7 +117,8 @@
     selectedCaseId: null,
     pendingDeleteCaseId: null,
     editCaseId: null,
-    selectedCaseIdForRecord: null
+    selectedCaseIdForRecord: null,
+    searchQuery: ''   // new
   };
 
   // Helpers
@@ -150,17 +159,44 @@
   function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
   function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
 
-  // Render case list
+  // Filter cases based on currentTab and searchQuery
+  function getFilteredCases() {
+    let filtered = app.cases.filter(c => c.status === app.currentTab);
+    if (app.searchQuery.trim()) {
+      const query = app.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(c => 
+        (c.plaintiff && c.plaintiff.toLowerCase().includes(query)) ||
+        (c.defendant && c.defendant.toLowerCase().includes(query))
+      );
+    }
+    return filtered;
+  }
+
+  // Render case list (with search)
   function renderCaseList() {
     const container = document.getElementById('caseListContainer');
-    const filtered = app.cases.filter(c => c.status === app.currentTab);
-    if (!filtered.length) { container.innerHTML = '<div class="empty-msg">📭 کوئی کیس نہیں ملا</div>'; return; }
+    const filtered = getFilteredCases();
+    if (!filtered.length) {
+      container.innerHTML = '<div class="empty-msg">📭 کوئی کیس نہیں ملا</div>';
+      return;
+    }
     container.innerHTML = filtered.map(c => `
       <div class="case-item" onclick="openCaseDetail('${c.id}')">
         <div class="case-top-row"><span class="case-name">${escapeHtml(c.plaintiff||'?')} vs ${escapeHtml(c.defendant||'?')}</span><span class="case-badge">${c.filenum||'فائل'}</span></div>
         <div class="case-info-row"><span class="case-judge">⚖️ ${escapeHtml(c.judge||'جج نامعلوم')}</span><span class="case-type-badge">📌 ${escapeHtml(c.casetype||'—')}</span></div>
       </div>
     `).join('');
+  }
+
+  // Update search and re-render
+  function updateSearch() {
+    app.searchQuery = document.getElementById('searchInput').value;
+    if (app.currentView === 'list') {
+      renderCaseList();
+    } else {
+      // If detail view is open, we don't re-render the list until back
+      // But we can still store the search query
+    }
   }
 
   // Open case detail
@@ -213,7 +249,7 @@
     app.selectedCaseId = null;
     document.getElementById('detailView').style.display = 'none';
     document.getElementById('caseListView').style.display = 'block';
-    renderCaseList();
+    renderCaseList(); // re-render with current search
   };
 
   // PDF print
@@ -225,7 +261,7 @@
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>کیس ${c.filenum}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Noto Nastaliq Urdu',sans-serif;padding:20px;max-width:700px;margin:0 auto;} .header{text-align:center;margin-bottom:20px;} .info{background:#fef8ef;padding:12px;border-radius:16px;margin-bottom:20px;} table{width:100%;} td{padding:6px;} .footer{text-align:center;margin-top:30px;font-size:0.7rem;}</style></head><body>
       <div class="header"><h1>⚖️ کیس کی تفصیل</h1><p>تاریخ: ${new Date().toLocaleDateString('ur-PK')}</p></div>
-      <div class="info"><h3>کیس کی معلومات</h3><table>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum]].map(([l,v])=>`<tr><td>${l}:</td><td>${escapeHtml(v||'—')}</td></table>`).join('')}</table></div>
+      <div class="info"><h3>کیس کی معلومات</h3><table>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum]].map(([l,v])=>`<tr><td>${l}:</td><td>${escapeHtml(v||'—')}</td></tr>`).join('')}</table></div>
       <div><h3>📋 تاریخوں کی تفصیل</h3>${recordsHtml || '<p>کوئی تاریخ نہیں</p>'}</div>
       <div class="footer">کیس مینجمنٹ سسٹم</div>
     </body></html>`);
@@ -362,6 +398,9 @@
     document.getElementById('closeCalendarBtn').onclick = () => document.getElementById('calendarModal').classList.remove('open');
     document.getElementById('todayBtn').onclick = () => { const d = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = d; showHearingsForDate(d); };
     document.getElementById('searchCalendarBtn').onclick = () => { const d = document.getElementById('calendarDatePicker').value; if (d) showHearingsForDate(d); };
+    // Search input event
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', () => { updateSearch(); });
   });
 </script>
 </body>
