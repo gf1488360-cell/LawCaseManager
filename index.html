@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ - مکمل کیس ٹائپ سلیکٹر</title>
+  <title>کیس مینجمنٹ </title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,6 +36,7 @@
     .info-item { font-size: 0.8rem; word-break: break-word; }
     .info-label { font-weight: 600; color: #8b6b48; display: block; margin-bottom: 3px; font-size: 0.7rem; }
     .info-value { font-weight: 500; font-size: 0.85rem; }
+    .criminal-fields-in-detail { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2d2b6; grid-column: span 2; }
     .action-buttons { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
     .btn { padding: 7px 14px; border-radius: 40px; border: none; font-family: inherit; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
     .btn-primary { background: #2c5f2d; color: white; }
@@ -66,6 +67,7 @@
     .pdf-case-btn-small { background: #7b2c1a; }
     .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2d2b6; flex-wrap: wrap; gap: 8px; }
     .download-all-btn { background: #2c5f2d; color: white; border: none; border-radius: 30px; padding: 5px 12px; font-size: 0.7rem; cursor: pointer; }
+    .dynamic-fields { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e2d2b6; }
     @media (max-width: 480px) { .case-top-row { flex-direction: column; align-items: flex-start; } .case-badge { align-self: flex-start; } .btn { white-space: normal; flex: 1; text-align: center; } .calendar-item { flex-direction: column; align-items: flex-start; } .calendar-buttons { margin-top: 5px; } }
     @media print { .header, .tabs, .action-buttons, .back-btn, .calendar-icon, .delete-record, .btn, .modal-overlay, .toast, .btn-add, .search-box { display: none !important; } }
   </style>
@@ -75,7 +77,7 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>60+ کیس اقسام · ٹائپ کریں یا منتخب کریں · تمام سماعتیں ڈاؤن لوڈ</p>
+    <p>Adv. Abdul Mujeeb</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
@@ -91,11 +93,10 @@
   <div id="detailView" style="display: none;"></div>
 </div>
 
-<!-- Modal: Add/Edit Case with datalist for case type -->
+<!-- Modal: Add/Edit Case -->
 <div id="caseModal" class="modal-overlay"><div class="modal-card"><div class="modal-title" id="caseModalTitle">نیا کیس</div>
 <input type="text" id="plaintiff" placeholder="مدعی (Plaintiff)"><input type="text" id="defendant" placeholder="مدعا علیہ (Defendant)">
 <input type="text" id="judge" placeholder="جج کا نام (Judge)"><input type="text" id="representing" placeholder="مدافع کی طرف سے">
-<!-- Case Type: input with datalist for free typing + dropdown suggestions -->
 <input type="text" id="casetype" list="caseTypesList" placeholder="کیس کی قسم (ٹائپ کریں یا منتخب کریں)" autocomplete="off">
 <datalist id="caseTypesList">
   <!-- Civil & General -->
@@ -112,8 +113,6 @@
   <option value="ضمانت درخواست (Bail Application)">ضمانت درخواست (Bail Application)</option>
   <option value="دیوانی اصل (Civil Original)">دیوانی اصل (Civil Original)</option>
   <option value="فوجداری اصل (Criminal Original)">فوجداری اصل (Criminal Original)</option>
-  
-  <!-- Family Cases -->
   <option value="خلع (Khula / Dissolution of Marriage)">خلع (Khula / Dissolution of Marriage)</option>
   <option value="طلاق (Divorce / Talaq)">طلاق (Divorce / Talaq)</option>
   <option value="نان نفقہ (Maintenance)">نان نفقہ (Maintenance)</option>
@@ -123,37 +122,34 @@
   <option value="سرپرستی (Guardianship)">سرپرستی (Guardianship)</option>
   <option value="ملاقات کے حقوق (Visitation Rights)">ملاقات کے حقوق (Visitation Rights)</option>
   <option value="ازدواجی تعلقات کی بحالی (Restitution of Conjugal Rights)">ازدواجی تعلقات کی بحالی (Restitution of Conjugal Rights)</option>
-  <option value="جھوٹے نکاح کا دعویٰ (Jactitation of Marriage)">جھوٹے نکاح کا دعویٰ (Jactitation of Marriage)</option>
-  <option value="طلاق کے بعد بچوں کے اخراجات (Child Maintenance After Divorce)">طلاق کے بعد بچوں کے اخراجات (Child Maintenance After Divorce)</option>
-  
-  <!-- Property & Land -->
   <option value="تقسیم جائیداد (Partition Suit)">تقسیم جائیداد (Partition Suit)</option>
   <option value="قبضہ (Possession Suit)">قبضہ (Possession Suit)</option>
   <option value="معاہدہ پر عملدرآمد (Specific Performance)">معاہدہ پر عملدرآمد (Specific Performance)</option>
   <option value="دعویٰ شفعہ (Pre-emption Suit)">دعویٰ شفعہ (Pre-emption Suit)</option>
   <option value="کرایہ داری (Rent Case)">کرایہ داری (Rent Case)</option>
-  <option value="زرعی اراضی (Land Revenue Case)">زرعی اراضی (Land Revenue Case)</option>
-  <option value="مشترکہ جائیداد کی تقسیم">مشترکہ جائیداد کی تقسیم</option>
-  
-  <!-- Other Civil -->
   <option value="اعلانیہ دعویٰ (Suit for Declaration)">اعلانیہ دعویٰ (Suit for Declaration)</option>
   <option value="حکم امتناعی (Permanent Injunction)">حکم امتناعی (Permanent Injunction)</option>
-  <option value="لازمی حکم (Mandatory Injunction)">لازمی حکم (Mandatory Injunction)</option>
   <option value="رقم کی وصولی (Recovery Suit)">رقم کی وصولی (Recovery Suit)</option>
   <option value="دستاویز منسوخی (Cancellation of Document)">دستاویز منسوخی (Cancellation of Document)</option>
   <option value="نقصان (Damages Suit)">نقصان (Damages Suit)</option>
   <option value="توہین (Defamation Suit)">توہین (Defamation Suit)</option>
   <option value="وراثت (Inheritance / Succession)">وراثت (Inheritance / Succession)</option>
-  <option value="بچے کی قانونی حیثیت (Legitimacy of Child)">بچے کی قانونی حیثیت (Legitimacy of Child)</option>
-  <option value="گود لینے کے معاملات (Adoption Guardianship)">گود لینے کے معاملات (Adoption Guardianship)</option>
   <option value="ٹریڈ مارک / کاپی رائٹ (Trademark / Copyright)">ٹریڈ مارک / کاپی رائٹ (Trademark / Copyright)</option>
   <option value="سروس معاملات (Service Matter)">سروس معاملات (Service Matter)</option>
   <option value="صارفین کا تحفظ (Consumer Protection)">صارفین کا تحفظ (Consumer Protection)</option>
-  <option value="انتخابی درخواست (Election Petition)">انتخابی درخواست (Election Petition)</option>
   <option value="دیگر (Other - لکھیں)">دیگر (Other - لکھیں)</option>
 </datalist>
 <div style="display:flex;gap:8px;"><input type="text" id="code" placeholder="کوڈ" style="flex:1"><input type="text" id="phone" placeholder="فون" dir="ltr" style="flex:1"></div>
-<input type="text" id="filenum" placeholder="فائل نمبر"><textarea id="statusNote" style="display:none;"></textarea>
+<input type="text" id="filenum" placeholder="فائل نمبر">
+
+<!-- Dynamic Criminal Fields -->
+<div id="criminalFields" class="dynamic-fields">
+  <input type="text" id="policeStation" placeholder="پولیس اسٹیشن (Police Station)">
+  <input type="text" id="firNo" placeholder="FIR نمبر">
+  <textarea id="offences" rows="2" placeholder="جرائم / دفعات (Offences/Sections)"></textarea>
+</div>
+
+<textarea id="statusNote" style="display:none;"></textarea>
 <div class="flex-btns"><button class="btn btn-secondary" id="cancelCaseBtn">منسوخ</button><button class="btn btn-primary" id="saveCaseBtn">محفوظ کریں</button></div></div></div>
 
 <div id="dateRecordModal" class="modal-overlay"><div class="modal-card"><div class="modal-title">📅 نئی تاریخ شامل کریں</div>
@@ -184,7 +180,40 @@
     currentCalendarDate: null
   };
 
-  // Helpers
+  // Helper to check if case type is criminal
+  function isCriminalCase(caseType) {
+    if (!caseType) return false;
+    const criminalKeywords = ['فوجداری', 'Criminal', 'ضمانت', 'Bail', 'فوجداری نظرثانی', 'فوجداری اصل', 'جرائم'];
+    return criminalKeywords.some(kw => caseType.includes(kw));
+  }
+
+  // Toggle criminal fields visibility in modal
+  function toggleCriminalFields() {
+    const caseType = document.getElementById('casetype').value;
+    const fieldsDiv = document.getElementById('criminalFields');
+    if (isCriminalCase(caseType)) {
+      fieldsDiv.style.display = 'block';
+    } else {
+      fieldsDiv.style.display = 'none';
+    }
+  }
+
+  // Get criminal data from modal
+  function getCriminalData() {
+    return {
+      policeStation: document.getElementById('policeStation').value.trim(),
+      firNo: document.getElementById('firNo').value.trim(),
+      offences: document.getElementById('offences').value.trim()
+    };
+  }
+
+  // Set criminal data in modal
+  function setCriminalData(data) {
+    document.getElementById('policeStation').value = data.policeStation || '';
+    document.getElementById('firNo').value = data.firNo || '';
+    document.getElementById('offences').value = data.offences || '';
+  }
+
   function getMonthOptions() {
     const months = [];
     const now = new Date();
@@ -199,16 +228,23 @@
     const months = getMonthOptions();
     sel.innerHTML = months.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
   }
-  function saveData() { localStorage.setItem('case_system_final_v2', JSON.stringify(app.cases)); }
+  function saveData() { localStorage.setItem('case_system_dynamic', JSON.stringify(app.cases)); }
   function loadData() {
-    const raw = localStorage.getItem('case_system_final_v2');
+    const raw = localStorage.getItem('case_system_dynamic');
     if (raw) {
       app.cases = JSON.parse(raw);
-      app.cases.forEach(c => { if (!c.records) c.records = []; if (!c.status) c.status = 'active'; if (!c.representing) c.representing = ''; if (!c.judge) c.judge = ''; });
+      app.cases.forEach(c => {
+        if (!c.records) c.records = [];
+        if (!c.status) c.status = 'active';
+        if (!c.representing) c.representing = '';
+        if (!c.judge) c.judge = '';
+        if (!c.criminalData) c.criminalData = { policeStation: '', firNo: '', offences: '' };
+      });
     } else {
       app.cases = [{
         id: 'c1', plaintiff: 'احمد علی', defendant: 'محمد رضا', judge: 'جسٹس عامر حسین', representing: 'مسٹر خالد وکیل',
-        casetype: 'دیوانی مقدمہ (Civil Suit)', code: '101', phone: '03001234567', filenum: '2024/01', status_note: '', status: 'active',
+        casetype: 'فوجداری مقدمہ (Criminal Case)', code: '101', phone: '03001234567', filenum: '2024/01', status_note: '', status: 'active',
+        criminalData: { policeStation: 'ماڈل ٹاؤن تھانہ', firNo: '123/2024', offences: '379 PPC (چوری)' },
         records: [
           { id: 'r1', date: '2024-01-10', month: '2024-01', note: 'پہلی سماعت - ملتوی' },
           { id: 'r2', date: '2024-02-15', month: '2024-02', note: 'دوسری سماعت - دلائل' },
@@ -222,7 +258,6 @@
   function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
   function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
 
-  // Filter cases
   function getFilteredCases() {
     let filtered = app.cases.filter(c => c.status === app.currentTab);
     if (app.searchQuery.trim()) {
@@ -264,6 +299,16 @@
         <button class="delete-record" onclick="deleteRecord('${c.id}', '${rec.id}')">🗑️</button>
       </div>
     `).join('');
+    
+    // Criminal details section (if any)
+    const criminalHtml = (c.criminalData && (c.criminalData.policeStation || c.criminalData.firNo || c.criminalData.offences)) ? `
+      <div class="criminal-fields-in-detail">
+        ${c.criminalData.policeStation ? `<div class="info-item"><span class="info-label">پولیس اسٹیشن:</span><span class="info-value">${escapeHtml(c.criminalData.policeStation)}</span></div>` : ''}
+        ${c.criminalData.firNo ? `<div class="info-item"><span class="info-label">FIR نمبر:</span><span class="info-value">${escapeHtml(c.criminalData.firNo)}</span></div>` : ''}
+        ${c.criminalData.offences ? `<div class="info-item"><span class="info-label">جرائم / دفعات:</span><span class="info-value">${escapeHtml(c.criminalData.offences)}</span></div>` : ''}
+      </div>
+    ` : '';
+    
     document.getElementById('detailView').innerHTML = `
       <div class="detail-view">
         <div class="detail-header"><button class="back-btn" onclick="backToList()">↩️ واپس</button><div class="case-title">${escapeHtml(c.plaintiff)} vs ${escapeHtml(c.defendant)}</div></div>
@@ -276,6 +321,7 @@
           <div class="info-item"><span class="info-label">کوڈ:</span><span class="info-value">${escapeHtml(c.code||'—')}</span></div>
           <div class="info-item"><span class="info-label">فون:</span><span class="info-value" dir="ltr">${escapeHtml(c.phone||'—')}</span></div>
           <div class="info-item"><span class="info-label">فائل نمبر:</span><span class="info-value">${escapeHtml(c.filenum||'—')}</span></div>
+          ${criminalHtml}
         </div>
         <div class="action-buttons">
           <button class="btn btn-primary" onclick="editCaseDetails('${c.id}')">✏️ ترمیم</button>
@@ -292,23 +338,29 @@
 
   window.backToList = function() { app.currentView = 'list'; app.selectedCaseId = null; document.getElementById('detailView').style.display = 'none'; document.getElementById('caseListView').style.display = 'block'; renderCaseList(); };
 
-  // PDF print
+  // PDF print including criminal fields
   window.printCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
     const sorted = [...c.records].sort((a,b) => new Date(a.date) - new Date(b.date));
     const recordsHtml = sorted.map(rec => `<div style="border-bottom:1px solid #e0d5c0; padding:8px 0;"><strong>📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong><br><span>${escapeHtml(rec.note) || '—'}</span></div>`).join('');
+    const criminalRows = [];
+    if (c.criminalData) {
+      if (c.criminalData.policeStation) criminalRows.push(`<tr><td style="padding:6px;font-weight:bold;">پولیس اسٹیشن:</td><td>${escapeHtml(c.criminalData.policeStation)}</td>`);
+      if (c.criminalData.firNo) criminalRows.push(`<tr><td style="padding:6px;font-weight:bold;">FIR نمبر:</td><td>${escapeHtml(c.criminalData.firNo)}</td>`);
+      if (c.criminalData.offences) criminalRows.push(`<tr><td style="padding:6px;font-weight:bold;">جرائم/دفعات:</td><td>${escapeHtml(c.criminalData.offences)}</td>`);
+    }
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>کیس ${c.filenum}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Noto Nastaliq Urdu',sans-serif;padding:20px;max-width:700px;margin:0 auto;} .header{text-align:center;margin-bottom:20px;} .info{background:#fef8ef;padding:12px;border-radius:16px;margin-bottom:20px;} table{width:100%;} td{padding:6px;} .footer{text-align:center;margin-top:30px;font-size:0.7rem;}</style></head><body>
       <div class="header"><h1>⚖️ کیس کی تفصیل</h1><p>تاریخ: ${new Date().toLocaleDateString('ur-PK')}</p></div>
-      <div class="info"><h3>کیس کی معلومات</h3><table>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum]].map(([l,v])=>`<tr><td style="padding:6px;font-weight:bold;">${l}:</td><td>${escapeHtml(v||'—')}</td></tr>`).join('')}</table></div>
+      <div class="info"><h3>کیس کی معلومات</h3><table>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum], ...criminalRows.map(r => r)].map((row) => Array.isArray(row) ? `<tr><td style="padding:6px;font-weight:bold;">${row[0]}:</td><td>${escapeHtml(row[1]||'—')}</td>` : row).join('')}</table></div>
       <div><h3>📋 تاریخوں کی تفصیل</h3>${recordsHtml || '<p>کوئی تاریخ نہیں</p>'}</div>
       <div class="footer">کیس مینجمنٹ سسٹم</div>
     </body></html>`);
     w.document.close(); w.focus(); w.print(); showToast('پرنٹ ڈائیلاگ کھل رہا ہے');
   };
 
-  // Add/Edit case with datalist handling
+  // Add/Edit case with criminal data
   function openAddCaseModal() {
     app.editCaseId = null;
     document.getElementById('caseModalTitle').innerText = 'نیا کیس';
@@ -316,6 +368,8 @@
     document.getElementById('judge').value = ''; document.getElementById('representing').value = '';
     document.getElementById('casetype').value = '';
     document.getElementById('code').value = ''; document.getElementById('phone').value = ''; document.getElementById('filenum').value = '';
+    setCriminalData({ policeStation: '', firNo: '', offences: '' });
+    toggleCriminalFields();
     document.getElementById('caseModal').classList.add('open');
   }
   window.editCaseDetails = (id) => {
@@ -331,6 +385,8 @@
     document.getElementById('code').value = c.code || '';
     document.getElementById('phone').value = c.phone || '';
     document.getElementById('filenum').value = c.filenum || '';
+    setCriminalData(c.criminalData || { policeStation: '', firNo: '', offences: '' });
+    toggleCriminalFields();
     document.getElementById('caseModal').classList.add('open');
   };
   function saveCaseHandler() {
@@ -345,7 +401,8 @@
       code: document.getElementById('code').value.trim(),
       phone: document.getElementById('phone').value.trim(),
       filenum: document.getElementById('filenum').value.trim(),
-      status_note: '', status: 'active', records: []
+      status_note: '', status: 'active', records: [],
+      criminalData: getCriminalData()
     };
     if (!data.casetype) data.casetype = 'دیگر';
     if (app.editCaseId) {
@@ -493,6 +550,9 @@
     document.getElementById('todayBtn').onclick = () => { const d = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = d; showHearingsForDate(d); };
     document.getElementById('searchCalendarBtn').onclick = () => { const d = document.getElementById('calendarDatePicker').value; if (d) showHearingsForDate(d); };
     document.getElementById('searchInput').addEventListener('input', () => updateSearch());
+    // Dynamic fields listener
+    document.getElementById('casetype').addEventListener('input', toggleCriminalFields);
+    document.getElementById('casetype').addEventListener('change', toggleCriminalFields);
   });
 </script>
 </body>
