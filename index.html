@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ - کیلنڈر میں تمام سماعتوں کی ڈاؤن لوڈ</title>
+  <title>کیس مینجمنٹ - کیس قسم کا سلیکٹر</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -75,7 +75,7 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>جج · کیس قسم · تلاش · تمام سماعتیں ڈاؤن لوڈ</p>
+    <p>کیس قسم سلیکٹر · جج · تلاش · تمام سماعتیں ڈاؤن لوڈ</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
@@ -96,7 +96,31 @@
 <div id="caseModal" class="modal-overlay"><div class="modal-card"><div class="modal-title" id="caseModalTitle">نیا کیس</div>
 <input type="text" id="plaintiff" placeholder="مدعی (Plaintiff)"><input type="text" id="defendant" placeholder="مدعا علیہ (Defendant)">
 <input type="text" id="judge" placeholder="جج کا نام (Judge)"><input type="text" id="representing" placeholder="مدافع کی طرف سے">
-<input type="text" id="casetype" placeholder="کیس کی قسم"><div style="display:flex;gap:8px;"><input type="text" id="code" placeholder="کوڈ" style="flex:1"><input type="text" id="phone" placeholder="فون" dir="ltr" style="flex:1"></div>
+<!-- Case Type Dropdown with 20+ Urdu options -->
+<select id="casetype">
+  <option value="دیوانی مقدمہ">دیوانی مقدمہ (Civil Suit)</option>
+  <option value="فوجداری مقدمہ">فوجداری مقدمہ (Criminal Case)</option>
+  <option value="خاندانی مقدمہ">خاندانی مقدمہ (Family Suit)</option>
+  <option value="دیوانی اپیل">دیوانی اپیل (Civil Appeal)</option>
+  <option value="ثانوی اپیل">ثانوی اپیل (Second Appeal)</option>
+  <option value="ہائی کورٹ اپیل">ہائی کورٹ اپیل (High Court Appeal)</option>
+  <option value="انٹرا کورٹ اپیل">انٹرا کورٹ اپیل (Intra Court Appeal)</option>
+  <option value="آئینی درخواست">آئینی درخواست (Constitutional Petition)</option>
+  <option value="رٹ درخواست">رٹ درخواست (Writ Petition)</option>
+  <option value="دیوانی نظرثانی">دیوانی نظرثانی (Civil Revision)</option>
+  <option value="فوجداری نظرثانی">فوجداری نظرثانی (Criminal Revision)</option>
+  <option value="ضمانت درخواست">ضمانت درخواست (Bail Application)</option>
+  <option value="تعمیل درخواست">تعمیل درخواست (Execution Petition)</option>
+  <option value="متفرق درخواست">متفرق درخواست (Misc Application)</option>
+  <option value="دیوانی اصل">دیوانی اصل (Civil Original)</option>
+  <option value="فوجداری اصل">فوجداری اصل (Criminal Original)</option>
+  <option value="دیہاڑی مقدمہ">دیہاڑی مقدمہ (Rent Case)</option>
+  <option value="ٹریفک مقدمہ">ٹریفک مقدمہ (Traffic Case)</option>
+  <option value="خدمت مقدمہ">خدمت مقدمہ (Service Case)</option>
+  <option value="دیوانی درخواست">دیوانی درخواست (Civil Misc)</option>
+  <option value="دیگر">دیگر (Other)</option>
+</select>
+<div style="display:flex;gap:8px;"><input type="text" id="code" placeholder="کوڈ" style="flex:1"><input type="text" id="phone" placeholder="فون" dir="ltr" style="flex:1"></div>
 <input type="text" id="filenum" placeholder="فائل نمبر"><textarea id="statusNote" style="display:none;"></textarea>
 <div class="flex-btns"><button class="btn btn-secondary" id="cancelCaseBtn">منسوخ</button><button class="btn btn-primary" id="saveCaseBtn">محفوظ کریں</button></div></div></div>
 
@@ -125,10 +149,46 @@
     editCaseId: null,
     selectedCaseIdForRecord: null,
     searchQuery: '',
-    currentCalendarDate: null  // store last selected date for download
+    currentCalendarDate: null
   };
 
-  // Helpers
+  // Helper to get case type dropdown value (handles custom values)
+  function getCaseTypeFromDropdown() {
+    const select = document.getElementById('casetype');
+    const selectedValue = select.value;
+    if (selectedValue === 'دیگر') {
+      // For "Other", we can allow custom text input? For simplicity, we'll use the selected value.
+      // But we can also add a hidden input. Since the user wants a selector, we'll store the exact text.
+      return selectedValue;
+    }
+    return selectedValue;
+  }
+
+  function setCaseTypeDropdown(value) {
+    const select = document.getElementById('casetype');
+    // Check if value exists in options
+    let optionExists = false;
+    for (let i = 0; i < select.options.length; i++) {
+      if (select.options[i].value === value) {
+        select.selectedIndex = i;
+        optionExists = true;
+        break;
+      }
+    }
+    if (!optionExists && value) {
+      // If not found, add it as an option temporarily or set to "دیگر"
+      // For simplicity, set to "دیگر" and also store original somewhere? But we want to keep the original value.
+      // Better to add a custom option dynamically.
+      const newOption = document.createElement('option');
+      newOption.value = value;
+      newOption.text = value + ' (محفوظ شدہ)';
+      select.add(newOption);
+      select.value = value;
+    } else if (!value) {
+      select.value = 'دیوانی مقدمہ';
+    }
+  }
+
   function getMonthOptions() {
     const months = [];
     const now = new Date();
@@ -152,7 +212,7 @@
     } else {
       app.cases = [{
         id: 'c1', plaintiff: 'احمد علی', defendant: 'محمد رضا', judge: 'جسٹس عامر حسین', representing: 'مسٹر خالد وکیل',
-        casetype: 'دیوانی', code: '101', phone: '03001234567', filenum: '2024/01', status_note: '', status: 'active',
+        casetype: 'دیوانی مقدمہ', code: '101', phone: '03001234567', filenum: '2024/01', status_note: '', status: 'active',
         records: [
           { id: 'r1', date: '2024-01-10', month: '2024-01', note: 'پہلی سماعت - ملتوی' },
           { id: 'r2', date: '2024-02-15', month: '2024-02', note: 'دوسری سماعت - دلائل' },
@@ -166,7 +226,6 @@
   function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
   function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
 
-  // Filter cases with search
   function getFilteredCases() {
     let filtered = app.cases.filter(c => c.status === app.currentTab);
     if (app.searchQuery.trim()) {
@@ -236,7 +295,6 @@
 
   window.backToList = function() { app.currentView = 'list'; app.selectedCaseId = null; document.getElementById('detailView').style.display = 'none'; document.getElementById('caseListView').style.display = 'block'; renderCaseList(); };
 
-  // PDF print for single case
   window.printCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -252,14 +310,13 @@
     w.document.close(); w.focus(); w.print(); showToast('پرنٹ ڈائیلاگ کھل رہا ہے');
   };
 
-  // Add/Edit case
   function openAddCaseModal() {
     app.editCaseId = null;
     document.getElementById('caseModalTitle').innerText = 'نیا کیس';
     document.getElementById('plaintiff').value = ''; document.getElementById('defendant').value = '';
     document.getElementById('judge').value = ''; document.getElementById('representing').value = '';
-    document.getElementById('casetype').value = ''; document.getElementById('code').value = '';
-    document.getElementById('phone').value = ''; document.getElementById('filenum').value = '';
+    setCaseTypeDropdown('دیوانی مقدمہ');
+    document.getElementById('code').value = ''; document.getElementById('phone').value = ''; document.getElementById('filenum').value = '';
     document.getElementById('caseModal').classList.add('open');
   }
   window.editCaseDetails = (id) => {
@@ -271,7 +328,7 @@
     document.getElementById('defendant').value = c.defendant || '';
     document.getElementById('judge').value = c.judge || '';
     document.getElementById('representing').value = c.representing || '';
-    document.getElementById('casetype').value = c.casetype || '';
+    setCaseTypeDropdown(c.casetype || 'دیوانی مقدمہ');
     document.getElementById('code').value = c.code || '';
     document.getElementById('phone').value = c.phone || '';
     document.getElementById('filenum').value = c.filenum || '';
@@ -285,7 +342,7 @@
       plaintiff, defendant,
       judge: document.getElementById('judge').value.trim(),
       representing: document.getElementById('representing').value.trim(),
-      casetype: document.getElementById('casetype').value.trim(),
+      casetype: getCaseTypeFromDropdown(),
       code: document.getElementById('code').value.trim(),
       phone: document.getElementById('phone').value.trim(),
       filenum: document.getElementById('filenum').value.trim(),
@@ -304,7 +361,6 @@
     else if (app.currentView === 'detail' && app.selectedCaseId) { const upd = app.cases.find(c => c.id === app.selectedCaseId); if (upd) renderDetailView(upd); }
   }
 
-  // Add date record
   window.openAddRecordModal = (caseId) => {
     app.selectedCaseIdForRecord = caseId;
     populateMonthDropdown(document.getElementById('recordMonth'));
@@ -345,9 +401,7 @@
     app.pendingDeleteCaseId = null;
   }
 
-  // Calendar with download all hearings for selected date
   function openCalendar() { const today = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = today; showHearingsForDate(today); document.getElementById('calendarModal').classList.add('open'); }
-  
   function showHearingsForDate(date) {
     app.currentCalendarDate = date;
     const resultsDiv = document.getElementById('calendarResults');
@@ -355,14 +409,7 @@
     app.cases.forEach(c => {
       c.records.forEach(rec => {
         if (rec.date === date) {
-          hearings.push({
-            caseId: c.id,
-            caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`,
-            filenum: c.filenum,
-            judge: c.judge,
-            caseType: c.casetype,
-            note: rec.note
-          });
+          hearings.push({ caseId: c.id, caseName: `${c.plaintiff||'?'} vs ${c.defendant||'?'}`, filenum: c.filenum, judge: c.judge, caseType: c.casetype, note: rec.note });
         }
       });
     });
@@ -384,8 +431,6 @@
       `).join('')}
     `;
   }
-  
-  // Download all hearings for current selected date as CSV
   window.downloadAllHearingsForDate = () => {
     const date = app.currentCalendarDate;
     if (!date) { showToast('پہلے کوئی تاریخ منتخب کریں'); return; }
@@ -405,16 +450,8 @@
       });
     });
     if (hearings.length === 0) { showToast('اس تاریخ پر کوئی سماعت نہیں'); return; }
-    // Prepare CSV content
     const headers = ['کیس کا نام', 'فائل نمبر', 'جج', 'کیس قسم', 'تاریخ سماعت (dd/mm/yyyy)', 'نوٹ'];
-    const rows = hearings.map(h => [
-      h.caseName,
-      h.filenum,
-      h.judge,
-      h.caseType,
-      new Date(h.hearingDate).toLocaleDateString('en-GB'),
-      h.note
-    ]);
+    const rows = hearings.map(h => [h.caseName, h.filenum, h.judge, h.caseType, new Date(h.hearingDate).toLocaleDateString('en-GB'), h.note]);
     const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -427,11 +464,7 @@
     URL.revokeObjectURL(url);
     showToast('تمام سماعتیں ڈاؤن لوڈ ہو رہی ہیں');
   };
-  
-  window.printCasePDFFromCalendar = (caseId) => {
-    closeAllModals();
-    printCasePDF(caseId);
-  };
+  window.printCasePDFFromCalendar = (caseId) => { closeAllModals(); printCasePDF(caseId); };
   window.openCaseFromCalendar = (caseId) => {
     closeAllModals();
     const c = app.cases.find(x => x.id === caseId);
@@ -444,7 +477,6 @@
     if (app.currentView === 'list') renderCaseList(); else backToList();
   }
 
-  // Event listeners
   document.addEventListener('DOMContentLoaded', () => {
     loadData(); renderCaseList();
     document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.status)));
