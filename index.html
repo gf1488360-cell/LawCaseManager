@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>کیس مینجمنٹ </title>
+  <title>کیس مینجمنٹ - مکمل نظام</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -77,7 +77,7 @@
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn">📅 کیلنڈر</button>
     <h1>⚖️ کیس مینجمنٹ</h1>
-    <p>Adv. Abdul Mujeeb</p>
+    <p>ڈائنامک فیلڈز · 60+ کیس اقسام · PDF پرنٹ</p>
   </div>
   <div class="tabs">
     <div class="tab active" data-status="active">فعال کیسز</div>
@@ -99,7 +99,6 @@
 <input type="text" id="judge" placeholder="جج کا نام (Judge)"><input type="text" id="representing" placeholder="مدافع کی طرف سے">
 <input type="text" id="casetype" list="caseTypesList" placeholder="کیس کی قسم (ٹائپ کریں یا منتخب کریں)" autocomplete="off">
 <datalist id="caseTypesList">
-  <!-- Civil & General -->
   <option value="دیوانی مقدمہ (Civil Suit)">دیوانی مقدمہ (Civil Suit)</option>
   <option value="فوجداری مقدمہ (Criminal Case)">فوجداری مقدمہ (Criminal Case)</option>
   <option value="دیوانی اپیل (Civil Appeal)">دیوانی اپیل (Civil Appeal)</option>
@@ -187,18 +186,12 @@
     return criminalKeywords.some(kw => caseType.includes(kw));
   }
 
-  // Toggle criminal fields visibility in modal
   function toggleCriminalFields() {
     const caseType = document.getElementById('casetype').value;
     const fieldsDiv = document.getElementById('criminalFields');
-    if (isCriminalCase(caseType)) {
-      fieldsDiv.style.display = 'block';
-    } else {
-      fieldsDiv.style.display = 'none';
-    }
+    fieldsDiv.style.display = isCriminalCase(caseType) ? 'block' : 'none';
   }
 
-  // Get criminal data from modal
   function getCriminalData() {
     return {
       policeStation: document.getElementById('policeStation').value.trim(),
@@ -207,7 +200,6 @@
     };
   }
 
-  // Set criminal data in modal
   function setCriminalData(data) {
     document.getElementById('policeStation').value = data.policeStation || '';
     document.getElementById('firNo').value = data.firNo || '';
@@ -300,7 +292,6 @@
       </div>
     `).join('');
     
-    // Criminal details section (if any)
     const criminalHtml = (c.criminalData && (c.criminalData.policeStation || c.criminalData.firNo || c.criminalData.offences)) ? `
       <div class="criminal-fields-in-detail">
         ${c.criminalData.policeStation ? `<div class="info-item"><span class="info-label">پولیس اسٹیشن:</span><span class="info-value">${escapeHtml(c.criminalData.policeStation)}</span></div>` : ''}
@@ -338,26 +329,90 @@
 
   window.backToList = function() { app.currentView = 'list'; app.selectedCaseId = null; document.getElementById('detailView').style.display = 'none'; document.getElementById('caseListView').style.display = 'block'; renderCaseList(); };
 
-  // PDF print including criminal fields
+  // FIXED PDF PRINT FUNCTION - Works reliably
   window.printCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
     const sorted = [...c.records].sort((a,b) => new Date(a.date) - new Date(b.date));
     const recordsHtml = sorted.map(rec => `<div style="border-bottom:1px solid #e0d5c0; padding:8px 0;"><strong>📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong><br><span>${escapeHtml(rec.note) || '—'}</span></div>`).join('');
-    const criminalRows = [];
+    
+    // Build criminal data rows
+    let criminalRows = '';
     if (c.criminalData) {
-      if (c.criminalData.policeStation) criminalRows.push(`<tr><td style="padding:6px;font-weight:bold;">پولیس اسٹیشن:</td><td>${escapeHtml(c.criminalData.policeStation)}</td>`);
-      if (c.criminalData.firNo) criminalRows.push(`<tr><td style="padding:6px;font-weight:bold;">FIR نمبر:</td><td>${escapeHtml(c.criminalData.firNo)}</td>`);
-      if (c.criminalData.offences) criminalRows.push(`<tr><td style="padding:6px;font-weight:bold;">جرائم/دفعات:</td><td>${escapeHtml(c.criminalData.offences)}</td>`);
+      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:6px;font-weight:bold;">پولیس اسٹیشن:</td><td>${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
+      if (c.criminalData.firNo) criminalRows += `<tr><td style="padding:6px;font-weight:bold;">FIR نمبر:</td><td>${escapeHtml(c.criminalData.firNo)}</td></tr>`;
+      if (c.criminalData.offences) criminalRows += `<tr><td style="padding:6px;font-weight:bold;">جرائم/دفعات:</td><td>${escapeHtml(c.criminalData.offences)}</td></tr>`;
     }
-    const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>کیس ${c.filenum}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Noto Nastaliq Urdu',sans-serif;padding:20px;max-width:700px;margin:0 auto;} .header{text-align:center;margin-bottom:20px;} .info{background:#fef8ef;padding:12px;border-radius:16px;margin-bottom:20px;} table{width:100%;} td{padding:6px;} .footer{text-align:center;margin-top:30px;font-size:0.7rem;}</style></head><body>
-      <div class="header"><h1>⚖️ کیس کی تفصیل</h1><p>تاریخ: ${new Date().toLocaleDateString('ur-PK')}</p></div>
-      <div class="info"><h3>کیس کی معلومات</h3><table>${[['مدعی',c.plaintiff],['مدعا علیہ',c.defendant],['جج',c.judge],['مدافع',c.representing],['کیس قسم',c.casetype],['کوڈ',c.code],['فون',c.phone],['فائل نمبر',c.filenum], ...criminalRows.map(r => r)].map((row) => Array.isArray(row) ? `<tr><td style="padding:6px;font-weight:bold;">${row[0]}:</td><td>${escapeHtml(row[1]||'—')}</td>` : row).join('')}</table></div>
-      <div><h3>📋 تاریخوں کی تفصیل</h3>${recordsHtml || '<p>کوئی تاریخ نہیں</p>'}</div>
-      <div class="footer">کیس مینجمنٹ سسٹم</div>
-    </body></html>`);
-    w.document.close(); w.focus(); w.print(); showToast('پرنٹ ڈائیلاگ کھل رہا ہے');
+    
+    const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes');
+    if (!printWindow) {
+      showToast('پاپ اپ بلاکر کو اجازت دیں');
+      return;
+    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>کیس ${c.filenum || c.id}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Noto Nastaliq Urdu', 'Inter', sans-serif;
+            background: white;
+            padding: 30px 20px;
+            color: #1e2a2f;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #7b2c1a; padding-bottom: 15px; }
+          .header h1 { color: #7b2c1a; font-size: 1.8rem; }
+          .header p { color: #6b5a41; margin-top: 5px; }
+          .info-section { background: #fef8ef; border-radius: 20px; padding: 16px; margin-bottom: 25px; }
+          .info-section h3 { color: #7b2c1a; margin-bottom: 12px; font-size: 1.1rem; }
+          table { width: 100%; border-collapse: collapse; }
+          td { padding: 8px; vertical-align: top; }
+          td:first-child { font-weight: 700; color: #8b6b48; width: 35%; }
+          .timeline-section h3 { color: #7b2c1a; margin-bottom: 12px; font-size: 1.1rem; }
+          .footer { margin-top: 40px; text-align: center; font-size: 0.7rem; color: #a48f6e; border-top: 1px solid #e0d5c0; padding-top: 15px; }
+          @media print {
+            body { padding: 0; }
+            .header h1 { font-size: 1.5rem; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>⚖️ کیس کی تفصیل</h1>
+          <p>تاریخ: ${new Date().toLocaleDateString('ur-PK')}</p>
+        </div>
+        <div class="info-section">
+          <h3>کیس کی معلومات</h3>
+          <table>
+            <tr><td>مدعی:</td><td>${escapeHtml(c.plaintiff || '—')}</td></tr>
+            <tr><td>مدعا علیہ:</td><td>${escapeHtml(c.defendant || '—')}</td></tr>
+            <tr><td>جج:</td><td>${escapeHtml(c.judge || '—')}</td></tr>
+            <tr><td>مدافع کی طرف سے:</td><td>${escapeHtml(c.representing || '—')}</td></tr>
+            <tr><td>کیس قسم:</td><td>${escapeHtml(c.casetype || '—')}</td></tr>
+            <tr><td>کوڈ:</td><td>${escapeHtml(c.code || '—')}</td></tr>
+            <tr><td>فون نمبر:</td><td dir="ltr">${escapeHtml(c.phone || '—')}</td></tr>
+            <tr><td>فائل نمبر:</td><td>${escapeHtml(c.filenum || '—')}</td></tr>
+            ${criminalRows}
+          </table>
+        </div>
+        <div class="timeline-section">
+          <h3>📋 تاریخوں کی تفصیل</h3>
+          ${recordsHtml || '<p>کوئی تاریخ شامل نہیں</p>'}
+        </div>
+        <div class="footer">کیس مینجمنٹ سسٹم سے تیار کردہ</div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    showToast('پرنٹ ڈائیلاگ کھل رہا ہے');
   };
 
   // Add/Edit case with criminal data
@@ -522,7 +577,10 @@
     URL.revokeObjectURL(url);
     showToast('تمام سماعتیں ڈاؤن لوڈ ہو رہی ہیں');
   };
-  window.printCasePDFFromCalendar = (caseId) => { closeAllModals(); printCasePDF(caseId); };
+  window.printCasePDFFromCalendar = (caseId) => {
+    closeAllModals();
+    printCasePDF(caseId);
+  };
   window.openCaseFromCalendar = (caseId) => {
     closeAllModals();
     const c = app.cases.find(x => x.id === caseId);
@@ -550,7 +608,6 @@
     document.getElementById('todayBtn').onclick = () => { const d = new Date().toISOString().slice(0,10); document.getElementById('calendarDatePicker').value = d; showHearingsForDate(d); };
     document.getElementById('searchCalendarBtn').onclick = () => { const d = document.getElementById('calendarDatePicker').value; if (d) showHearingsForDate(d); };
     document.getElementById('searchInput').addEventListener('input', () => updateSearch());
-    // Dynamic fields listener
     document.getElementById('casetype').addEventListener('input', toggleCriminalFields);
     document.getElementById('casetype').addEventListener('change', toggleCriminalFields);
   });
