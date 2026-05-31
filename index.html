@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>وکیل کیس مینجمنٹ | پیشہ ورانہ نظام</title>
+  <title>وکیل کیس مینجمنٹ | پیشہ ورانہ نظام | PDF ڈاؤن لوڈ</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- html2pdf library for reliable PDF download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     * {
       margin: 0;
@@ -112,7 +114,7 @@
     .stat-active .number { color: #15803d; }
     .stat-closed .number { color: #b91c1c; }
 
-    /* Tabs + Search + Add */
+    /* Action Bar */
     .action-bar {
       background: white;
       border-radius: 24px;
@@ -400,7 +402,7 @@
   <div class="brand">
     <div>
       <h1><i class="fas fa-gavel"></i> وکیل کیس مینجمنٹ</h1>
-      <p>پیشہ ورانہ نظام · مکمل ریکارڈ · خودکار دستاویزات</p>
+      <p>پیشہ ورانہ نظام · PDF ڈاؤن لوڈ · خودکار دستاویزات</p>
     </div>
     <button class="calendar-trigger" id="openCalendarBtn"><i class="fas fa-calendar-alt"></i> کیلنڈر & سماعتیں</button>
   </div>
@@ -470,9 +472,9 @@
   }
 
   // Load/Save
-  function saveData() { localStorage.setItem('advocate_pro_v3', JSON.stringify(app.cases)); }
+  function saveData() { localStorage.setItem('advocate_pro_final', JSON.stringify(app.cases)); }
   function loadData() {
-    const raw = localStorage.getItem('advocate_pro_v3');
+    const raw = localStorage.getItem('advocate_pro_final');
     if (raw) {
       app.cases = JSON.parse(raw);
       app.cases.forEach(c => {
@@ -580,7 +582,7 @@
         <div class="btn-group">
           <button class="btn-outline" onclick="editCase('${c.id}')"><i class="fas fa-edit"></i> ترمیم</button>
           <button class="btn-warning" onclick="openAddDateModal('${c.id}')"><i class="fas fa-calendar-plus"></i> نئی تاریخ</button>
-          <button class="btn-pdf" onclick="printCasePDF('${c.id}')"><i class="fas fa-print"></i> PDF</button>
+          <button class="btn-pdf" onclick="downloadCasePDF('${c.id}')"><i class="fas fa-download"></i> PDF ڈاؤن لوڈ</button>
           <button class="${c.status === 'active' ? 'btn-danger' : 'btn-primary'}" onclick="toggleStatus('${c.id}')">${c.status === 'active' ? 'بند کریں' : 'فعال کریں'}</button>
           <button class="btn-danger" onclick="requestDelete('${c.id}')"><i class="fas fa-trash-alt"></i> حذف</button>
         </div>
@@ -596,51 +598,295 @@
     renderCaseList();
   };
 
-  // PDF print (reliable)
-  window.printCasePDF = (caseId) => {
+  // ========== PDF DOWNLOAD (FIXED) ==========
+  window.downloadCasePDF = async (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
+    showToast('PDF تیار ہو رہا ہے...');
+    // Build HTML content for PDF
     const sorted = [...c.records].sort((a,b) => new Date(a.date) - new Date(b.date));
-    const recordsHtml = sorted.map(rec => `<div style="border-bottom:1px solid #e2e8f0; padding:8px 0;"><strong>📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong><br>${escapeHtml(rec.note)}</div>`).join('');
+    const recordsHtml = sorted.map(rec => `
+      <div style="border-bottom:1px solid #e2e8f0; padding:10px 0; display:flex; justify-content:space-between; flex-wrap:wrap;">
+        <strong>📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong>
+        <span>${escapeHtml(rec.note) || '—'}</span>
+      </div>
+    `).join('');
+    
     let criminalRows = '';
     if (c.criminalData) {
-      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:6px;">پولیس اسٹیشن</td><td>${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
-      if (c.criminalData.firNo) criminalRows += `<tr><td>FIR نمبر</td><td>${escapeHtml(c.criminalData.firNo)}</td></tr>`;
-      if (c.criminalData.offences) criminalRows += `<tr><td>جرائم</td><td>${escapeHtml(c.criminalData.offences)}</td></tr>`;
+      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:6px; font-weight:bold;">پولیس اسٹیشن</td><td>${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
+      if (c.criminalData.firNo) criminalRows += `<tr><td style="padding:6px; font-weight:bold;">FIR نمبر</td><td>${escapeHtml(c.criminalData.firNo)}</td></tr>`;
+      if (c.criminalData.offences) criminalRows += `<tr><td style="padding:6px; font-weight:bold;">جرائم/دفعات</td><td>${escapeHtml(c.criminalData.offences)}</td></tr>`;
     }
-    const win = window.open('', '_blank');
-    win.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>کیس ${c.filenum}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Noto Nastaliq Urdu',sans-serif;padding:20px;max-width:700px;margin:0 auto;} .header{text-align:center;margin-bottom:20px;} table{width:100%;border-collapse:collapse;} td{padding:8px;} .footer{margin-top:30px;text-align:center;}</style></head><body>
-      <div class="header"><h1>⚖️ کیس رپورٹ</h1><p>تاریخ: ${new Date().toLocaleDateString()}</p></div>
-      <table border="0"><tr><td>مدعی</td><td>${escapeHtml(c.plaintiff)}</td></tr><tr><td>مدعا علیہ</td><td>${escapeHtml(c.defendant)}</td></tr><tr><td>جج</td><td>${escapeHtml(c.judge)}</td></tr><tr><td>مدافع</td><td>${escapeHtml(c.representing)}</td></tr><tr><td>کیس قسم</td><td>${escapeHtml(c.casetype)}</td></tr><tr><td>کوڈ</td><td>${escapeHtml(c.code)}</td></tr><tr><td>فون</td><td>${escapeHtml(c.phone)}</td></tr><tr><td>فائل نمبر</td><td>${escapeHtml(c.filenum)}</td></tr>${criminalRows}</table>
-      <h3>سماعتیں</h3>${recordsHtml || 'کوئی سماعت نہیں'}<div class="footer">وکیل کیس مینجمنٹ سسٹم</div>
-    </body></html>`);
-    win.document.close(); win.print();
+    
+    const pdfHtml = `
+      <div style="direction:rtl; font-family:'Noto Nastaliq Urdu', 'Inter', sans-serif; padding:20px; max-width:800px; margin:0 auto;">
+        <div style="text-align:center; margin-bottom:30px; border-bottom:2px solid #7b2c1a; padding-bottom:15px;">
+          <h1 style="color:#7b2c1a;">⚖️ کیس رپورٹ</h1>
+          <p>تاریخ: ${new Date().toLocaleDateString('ur-PK')}</p>
+        </div>
+        <div style="background:#fef8ef; border-radius:16px; padding:16px; margin-bottom:25px;">
+          <h3 style="color:#7b2c1a;">کیس کی معلومات</h3>
+          <table style="width:100%; border-collapse:collapse;">
+            <tr><td style="padding:6px; font-weight:bold;">مدعی</td><td>${escapeHtml(c.plaintiff)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">مدعا علیہ</td><td>${escapeHtml(c.defendant)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">جج</td><td>${escapeHtml(c.judge)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">مدافع</td><td>${escapeHtml(c.representing)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">کیس قسم</td><td>${escapeHtml(c.casetype)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">کوڈ</td><td>${escapeHtml(c.code)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">فون</td><td>${escapeHtml(c.phone)}</td></tr>
+            <tr><td style="padding:6px; font-weight:bold;">فائل نمبر</td><td>${escapeHtml(c.filenum)}</td></tr>
+            ${criminalRows}
+          </table>
+        </div>
+        <div>
+          <h3 style="color:#7b2c1a;">📋 سماعتی تاریخچہ</h3>
+          ${recordsHtml || '<p>کوئی سماعت موجود نہیں</p>'}
+        </div>
+        <div style="margin-top:40px; text-align:center; font-size:0.7rem; color:#a48f6e; border-top:1px solid #e0d5c0; padding-top:15px;">
+          وکیل کیس مینجمنٹ سسٹم سے تیار کردہ
+        </div>
+      </div>
+    `;
+    
+    // Create a temporary div and use html2pdf
+    const element = document.createElement('div');
+    element.innerHTML = pdfHtml;
+    element.style.position = 'absolute';
+    element.style.top = '-9999px';
+    element.style.left = '-9999px';
+    document.body.appendChild(element);
+    try {
+      const opt = {
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `Case_${c.filenum || c.id}_${new Date().toISOString().slice(0,10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, letterRendering: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      await html2pdf().set(opt).from(element).save();
+      showToast('PDF ڈاؤن لوڈ ہو گیا');
+    } catch (err) {
+      console.error(err);
+      showToast('PDF بنانے میں خرابی');
+    } finally {
+      document.body.removeChild(element);
+    }
+  };
+
+  // Also fix calendar PDF button
+  window.downloadCasePDFFromCalendar = async (caseId) => {
+    closeModals();
+    await downloadCasePDF(caseId);
   };
 
   // CRUD helpers
-  function editCase(id) { /* open modal with data */ }
-  function openAddDateModal(id) { app.tempDateCaseId = id; document.getElementById('newDate').value = new Date().toISOString().slice(0,10); document.getElementById('newMonth').innerHTML = ''; /* populate months */ renderMonthSelect(); document.getElementById('dateModal').classList.add('open'); }
-  function renderMonthSelect() { const sel = document.getElementById('newMonth'); sel.innerHTML = ''; for(let i=-6;i<=12;i++){ const d = new Date(); d.setMonth(d.getMonth()+i); const val = d.toISOString().slice(0,7); const label = d.toLocaleString('ur-PK',{month:'long',year:'numeric'}); sel.innerHTML += `<option value="${val}">${label}</option>`; } }
-  function addDateRecord() { const c = app.cases.find(x=>x.id === app.tempDateCaseId); if(c){ c.records.push({id:'r'+Date.now(), date:document.getElementById('newDate').value, month:document.getElementById('newMonth').value, note:document.getElementById('newNote').value}); saveData(); closeModals(); if(app.currentView==='detail') openCaseDetail(c.id); showToast('تاریخ شامل'); } }
-  function deleteRecord(caseId, recId) { const c = app.cases.find(x=>x.id===caseId); if(c){ c.records = c.records.filter(r=>r.id!==recId); saveData(); if(app.currentView==='detail') openCaseDetail(caseId); showToast('تاریخ حذف'); } }
-  function toggleStatus(id) { const c = app.cases.find(x=>x.id===id); if(c){ c.status = c.status==='active'?'closed':'active'; saveData(); if(app.currentView==='detail') openCaseDetail(id); else renderCaseList(); renderStats(); } }
-  function requestDelete(id) { app.pendingDeleteId = id; document.getElementById('deleteCodeInput').value=''; document.getElementById('deleteCodeModal').classList.add('open'); }
-  function confirmDeleteWithCode() { if(document.getElementById('deleteCodeInput').value === '98765'){ app.cases = app.cases.filter(c=>c.id!==app.pendingDeleteId); saveData(); closeModals(); backToList(); renderCaseList(); renderStats(); showToast('کیس حذف'); } else { showToast('غلط کوڈ'); closeModals(); } }
-  function saveCaseFromModal() { /* full implementation similar to previous, ensure criminal fields toggle */ }
+  function editCase(id) {
+    const c = app.cases.find(x => x.id === id);
+    if (!c) return;
+    app.editModeId = id;
+    document.getElementById('modalTitle').innerText = 'کیس میں ترمیم';
+    document.getElementById('plaintiff').value = c.plaintiff;
+    document.getElementById('defendant').value = c.defendant;
+    document.getElementById('judge').value = c.judge;
+    document.getElementById('representing').value = c.representing;
+    document.getElementById('casetype').value = c.casetype;
+    document.getElementById('code').value = c.code;
+    document.getElementById('phone').value = c.phone;
+    document.getElementById('filenum').value = c.filenum;
+    document.getElementById('policeStation').value = c.criminalData?.policeStation || '';
+    document.getElementById('firNo').value = c.criminalData?.firNo || '';
+    document.getElementById('offences').value = c.criminalData?.offences || '';
+    document.getElementById('criminalDynamic').style.display = isCriminal(c.casetype) ? 'block' : 'none';
+    document.getElementById('caseModal').classList.add('open');
+  }
 
-  // Calendar + download
-  function openCalendar() { document.getElementById('calendarDatePicker').value = new Date().toISOString().slice(0,10); showHearingsForDate(); document.getElementById('calendarModal').classList.add('open'); }
-  function showHearingsForDate() { const date = document.getElementById('calendarDatePicker').value; const hearings = []; app.cases.forEach(c=>{ c.records.forEach(rec=>{ if(rec.date === date) hearings.push({id:c.id, name:`${c.plaintiff} vs ${c.defendant}`, file:c.filenum}); }); }); const div = document.getElementById('calendarResultList'); if(!hearings.length){ div.innerHTML = '<div style="text-align:center;padding:20px;">کوئی سماعت نہیں</div>'; return; } div.innerHTML = `<div><strong>کل سماعتیں: ${hearings.length}</strong> <button class="btn-outline" onclick="downloadCSVForDate('${date}')"><i class="fas fa-download"></i> تمام ڈاؤن لوڈ</button></div>` + hearings.map(h=>`<div style="background:#f1f5f9;border-radius:16px;padding:12px;margin-top:12px;display:flex;justify-content:space-between;"><span>⚖️ ${escapeHtml(h.name)} (${h.file})</span><div><button class="btn-outline" onclick="openCaseFromCalendar('${h.id}')">کھولیں</button> <button class="btn-pdf" onclick="printCasePDF('${h.id}')">PDF</button></div></div>`).join(''); }
-  function downloadCSVForDate(date) { const hearings = []; app.cases.forEach(c=>{ c.records.forEach(rec=>{ if(rec.date === date) hearings.push({name:`${c.plaintiff} vs ${c.defendant}`, file:c.filenum, judge:c.judge, type:c.casetype, note:rec.note}); }); }); if(!hearings.length) return; const csvRows = [["کیس کا نام","فائل نمبر","جج","کیس قسم","نوٹ"]]; hearings.forEach(h=>csvRows.push([h.name, h.file, h.judge, h.type, h.note])); const csv = csvRows.map(row=>row.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob(["\uFEFF"+csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Hearings_${date}.csv`; a.click(); URL.revokeObjectURL(a.href); showToast('ڈاؤن لوڈ شروع'); }
-  window.openCaseFromCalendar = (id) => { closeModals(); openCaseDetail(id); };
+  function openAddDateModal(id) {
+    app.tempDateCaseId = id;
+    document.getElementById('newDate').value = new Date().toISOString().slice(0,10);
+    renderMonthSelect();
+    document.getElementById('dateModal').classList.add('open');
+  }
+  function renderMonthSelect() {
+    const sel = document.getElementById('newMonth');
+    sel.innerHTML = '';
+    for(let i=-6; i<=12; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() + i);
+      const val = d.toISOString().slice(0,7);
+      const label = d.toLocaleString('ur-PK', {month:'long', year:'numeric'});
+      sel.innerHTML += `<option value="${val}">${label}</option>`;
+    }
+  }
+  function addDateRecord() {
+    const c = app.cases.find(x => x.id === app.tempDateCaseId);
+    if(c) {
+      c.records.push({
+        id: 'r'+Date.now(),
+        date: document.getElementById('newDate').value,
+        month: document.getElementById('newMonth').value,
+        note: document.getElementById('newNote').value
+      });
+      saveData();
+      closeModals();
+      if(app.currentView === 'detail') openCaseDetail(c.id);
+      showToast('تاریخ شامل');
+    }
+  }
+  function deleteRecord(caseId, recId) {
+    const c = app.cases.find(x => x.id === caseId);
+    if(c) {
+      c.records = c.records.filter(r => r.id !== recId);
+      saveData();
+      if(app.currentView === 'detail') openCaseDetail(caseId);
+      showToast('تاریخ حذف');
+    }
+  }
+  function toggleStatus(id) {
+    const c = app.cases.find(x => x.id === id);
+    if(c) {
+      c.status = c.status === 'active' ? 'closed' : 'active';
+      saveData();
+      if(app.currentView === 'detail') openCaseDetail(id);
+      else renderCaseList();
+      renderStats();
+    }
+  }
+  function requestDelete(id) {
+    app.pendingDeleteId = id;
+    document.getElementById('deleteCodeInput').value = '';
+    document.getElementById('deleteCodeModal').classList.add('open');
+  }
+  function confirmDeleteWithCode() {
+    if(document.getElementById('deleteCodeInput').value === '98765') {
+      app.cases = app.cases.filter(c => c.id !== app.pendingDeleteId);
+      saveData();
+      closeModals();
+      backToList();
+      renderCaseList();
+      renderStats();
+      showToast('کیس حذف');
+    } else {
+      showToast('غلط کوڈ');
+      closeModals();
+    }
+  }
+  function saveCaseFromModal() {
+    const data = {
+      id: app.editModeId || ('c'+Date.now()),
+      plaintiff: document.getElementById('plaintiff').value,
+      defendant: document.getElementById('defendant').value,
+      judge: document.getElementById('judge').value,
+      representing: document.getElementById('representing').value,
+      casetype: document.getElementById('casetype').value,
+      code: document.getElementById('code').value,
+      phone: document.getElementById('phone').value,
+      filenum: document.getElementById('filenum').value,
+      status: 'active',
+      records: [],
+      criminalData: {
+        policeStation: document.getElementById('policeStation').value,
+        firNo: document.getElementById('firNo').value,
+        offences: document.getElementById('offences').value
+      }
+    };
+    if(app.editModeId) {
+      let idx = app.cases.findIndex(c => c.id === app.editModeId);
+      if(idx !== -1) {
+        app.cases[idx] = {...app.cases[idx], ...data, records: app.cases[idx].records};
+        showToast('کیس اپ ڈیٹ');
+      }
+    } else {
+      app.cases.push(data);
+      showToast('کیس شامل');
+    }
+    saveData();
+    closeModals();
+    if(app.currentView === 'list') renderCaseList();
+    else backToList();
+    renderStats();
+  }
+
+  // Calendar functions with PDF download
+  function openCalendar() {
+    document.getElementById('calendarDatePicker').value = new Date().toISOString().slice(0,10);
+    showHearingsForDate();
+    document.getElementById('calendarModal').classList.add('open');
+  }
+  function showHearingsForDate() {
+    const date = document.getElementById('calendarDatePicker').value;
+    const hearings = [];
+    app.cases.forEach(c => {
+      c.records.forEach(rec => {
+        if(rec.date === date) hearings.push({id: c.id, name: `${c.plaintiff} vs ${c.defendant}`, file: c.filenum});
+      });
+    });
+    const div = document.getElementById('calendarResultList');
+    if(!hearings.length) {
+      div.innerHTML = '<div style="text-align:center;padding:20px;">کوئی سماعت نہیں</div>';
+      return;
+    }
+    div.innerHTML = `
+      <div><strong>کل سماعتیں: ${hearings.length}</strong> 
+        <button class="btn-outline" onclick="downloadCSVForDate('${date}')"><i class="fas fa-download"></i> تمام ڈاؤن لوڈ (CSV)</button>
+      </div>
+      ${hearings.map(h => `
+        <div style="background:#f1f5f9;border-radius:16px;padding:12px;margin-top:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <span>⚖️ ${escapeHtml(h.name)} (${h.file})</span>
+          <div>
+            <button class="btn-outline" onclick="openCaseFromCalendar('${h.id}')">کھولیں</button>
+            <button class="btn-pdf" onclick="downloadCasePDFFromCalendar('${h.id}')">PDF</button>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  }
+  function downloadCSVForDate(date) {
+    const hearings = [];
+    app.cases.forEach(c => {
+      c.records.forEach(rec => {
+        if(rec.date === date) hearings.push({
+          name: `${c.plaintiff} vs ${c.defendant}`,
+          file: c.filenum,
+          judge: c.judge,
+          type: c.casetype,
+          note: rec.note
+        });
+      });
+    });
+    if(!hearings.length) return;
+    const csvRows = [["کیس کا نام","فائل نمبر","جج","کیس قسم","نوٹ"]];
+    hearings.forEach(h => csvRows.push([h.name, h.file, h.judge, h.type, h.note]));
+    const csv = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(["\uFEFF"+csv], {type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`Hearings_${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('CSV ڈاؤن لوڈ شروع');
+  }
+  window.openCaseFromCalendar = (id) => {
+    closeModals();
+    openCaseDetail(id);
+  };
 
   function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); }
+  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
-  // Event binding and initialization
+  // Event binding
   document.getElementById('globalSearch').addEventListener('input', (e) => { app.searchQuery = e.target.value; if(app.currentView==='list') renderCaseList(); });
-  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ app.currentTab = btn.dataset.status; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); if(app.currentView==='list') renderCaseList(); else backToList(); renderStats(); }));
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    app.currentTab = btn.dataset.status;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(app.currentView==='list') renderCaseList();
+    else backToList();
+    renderStats();
+  }));
   document.getElementById('newCaseBtn').onclick = () => { app.editModeId = null; document.getElementById('modalTitle').innerText = 'نیا کیس'; document.getElementById('caseModal').classList.add('open'); };
   document.getElementById('cancelModalBtn').onclick = closeModals;
+  document.getElementById('saveCaseBtn').onclick = saveCaseFromModal;
   document.getElementById('cancelDateBtn').onclick = closeModals;
   document.getElementById('saveDateBtn').onclick = addDateRecord;
   document.getElementById('cancelDeleteBtn').onclick = closeModals;
@@ -650,24 +896,22 @@
   document.getElementById('todayBtn').onclick = () => { document.getElementById('calendarDatePicker').value = new Date().toISOString().slice(0,10); showHearingsForDate(); };
   document.getElementById('closeCalendarBtn').onclick = closeModals;
   document.getElementById('casetype').addEventListener('input', function() { document.getElementById('criminalDynamic').style.display = isCriminal(this.value) ? 'block' : 'none'; });
-  document.getElementById('saveCaseBtn').onclick = () => {
-    const data = {
-      id: app.editModeId || ('c'+Date.now()), plaintiff: document.getElementById('plaintiff').value, defendant: document.getElementById('defendant').value,
-      judge: document.getElementById('judge').value, representing: document.getElementById('representing').value, casetype: document.getElementById('casetype').value,
-      code: document.getElementById('code').value, phone: document.getElementById('phone').value, filenum: document.getElementById('filenum').value,
-      status: 'active', records: [], criminalData: { policeStation: document.getElementById('policeStation').value, firNo: document.getElementById('firNo').value, offences: document.getElementById('offences').value }
-    };
-    if(app.editModeId){ let idx = app.cases.findIndex(c=>c.id===app.editModeId); if(idx!==-1){ app.cases[idx] = {...app.cases[idx], ...data, records: app.cases[idx].records}; showToast('کیس اپ ڈیٹ'); } }
-    else { app.cases.push(data); showToast('کیس شامل'); }
-    saveData(); closeModals(); if(app.currentView==='list') renderCaseList(); else backToList(); renderStats();
-  };
-  window.editCase = (id) => { const c = app.cases.find(x=>x.id===id); if(c){ app.editModeId = id; document.getElementById('modalTitle').innerText = 'کیس میں ترمیم'; document.getElementById('plaintiff').value=c.plaintiff; document.getElementById('defendant').value=c.defendant; document.getElementById('judge').value=c.judge; document.getElementById('representing').value=c.representing; document.getElementById('casetype').value=c.casetype; document.getElementById('code').value=c.code; document.getElementById('phone').value=c.phone; document.getElementById('filenum').value=c.filenum; document.getElementById('policeStation').value=c.criminalData?.policeStation||''; document.getElementById('firNo').value=c.criminalData?.firNo||''; document.getElementById('offences').value=c.criminalData?.offences||''; document.getElementById('criminalDynamic').style.display = isCriminal(c.casetype) ? 'block' : 'none'; document.getElementById('caseModal').classList.add('open'); } };
+  
+  // Expose globals for inline handlers
   window.deleteRecord = deleteRecord;
-  window.printCasePDFFromCalendar = (id) => { closeModals(); printCasePDF(id); };
+  window.downloadCasePDFFromCalendar = downloadCasePDFFromCalendar;
+  window.openCaseFromCalendar = openCaseFromCalendar;
+  window.downloadCasePDF = downloadCasePDF;
+  window.editCase = editCase;
   window.openAddDateModal = openAddDateModal;
+  window.toggleStatus = toggleStatus;
+  window.requestDelete = requestDelete;
+  window.openCaseDetail = openCaseDetail;
+  window.backToList = backToList;
+  window.downloadCSVForDate = downloadCSVForDate;
 
-  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
-  loadData(); renderCaseList(); renderStats();
+  loadData();
+  renderCaseList();
 </script>
 </body>
 </html>
