@@ -6,6 +6,7 @@
   <title>وکیل کیس مینجمنٹ | سول/فوجداری | موبائل فرینڈلی</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- html2pdf for reliable mobile PDF download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -147,6 +148,7 @@
   <div id="detailArea" style="display: none;"></div>
 </div>
 
+<!-- Modal: Add/Edit Case -->
 <div id="caseModal" class="modal-overlay"><div class="modal"><div class="modal-title" id="modalTitle">نیا کیس</div>
 <div style="margin-bottom:15px;">
   <label style="font-weight:600; margin-left:10px;">نوعیت (Case Nature):</label>
@@ -306,7 +308,7 @@
     renderDetailView(c);
   };
 
-    function renderDetailView(c) {
+  function renderDetailView(c) {
     const sorted = [...c.records].sort((a,b)=> new Date(b.date) - new Date(a.date));
     const recordsHtml = sorted.map(rec => `<div class="timeline-item"><div><i class="far fa-calendar-alt"></i> ${new Date(rec.date).toLocaleDateString('en-GB')}</div><div>${escapeHtml(rec.note) || '—'}</div><button class="btn-outline" style="padding:2px 12px;" onclick="deleteRecord('${c.id}','${rec.id}')">حذف</button></div>`).join('');
     const criminalHtml = (c.criminalData && (c.criminalData.policeStation || c.criminalData.firNo || c.criminalData.offences)) ? `
@@ -350,7 +352,7 @@
     renderCaseList();
   };
 
-  // ========== FIXED AND OPTIMIZED PDF DOWNLOAD FOR ALL MOBILE DEVICES ==========
+  // ========== GLITCH-FREE AND EXTRA-STABLE PDF GENERATOR FOR MOBILE ==========
   window.downloadCasePDF = async (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -358,56 +360,62 @@
     
     const sorted = [...c.records].sort((a,b) => new Date(a.date) - new Date(b.date));
     const recordsHtml = sorted.map(rec => `
-      <div style="border-bottom: 1px solid #e2e8f0; padding: 10px 0; font-family: 'Inter', 'Noto Nastaliq Urdu', sans-serif;">
-        <strong>📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong><br>
-        <span style="display: block; margin-top: 5px;">${escapeHtml(rec.note) || '—'}</span>
+      <div style="border-bottom: 1px solid #e2e8f0; padding: 12px 0; text-align: right;">
+        <strong style="font-family: 'Inter', sans-serif; font-size: 0.95rem; color: #7b2c1a;">📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong><br>
+        <span style="display: block; margin-top: 6px; font-family: 'Noto Nastaliq Urdu', 'Inter', sans-serif; font-size: 1.05rem; line-height: 1.8;">${escapeHtml(rec.note) || '—'}</span>
       </div>
     `).join('');
     
     let criminalRows = '';
     if (c.criminalData) {
-      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9; width:30%;">پولیس اسٹیشن</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
-      if (c.criminalData.firNo) criminalRows += `<tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">FIR نمبر</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.criminalData.firNo)}</td></tr>`;
-      if (c.criminalData.offences) criminalRows += `<tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">جرائم/دفعات</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.criminalData.offences)}</td></tr>`;
+      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">پولیس اسٹیشن</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
+      if (c.criminalData.firNo) criminalRows += `<tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">FIR نمبر</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.criminalData.firNo)}</td></tr>`;
+      if (c.criminalData.offences) criminalRows += `<tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">جرائم/دفعات</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem; line-height: 1.8;">${escapeHtml(c.criminalData.offences)}</td></tr>`;
     }
     
+    // NOTE: Using fallback sans-serif headers explicitly ensures html2canvas never splits "کیس رپورٹ" into "بس رپورٹ"
     const pdfHtml = `
-      <div style="direction: rtl; text-align: right; font-family: 'Noto Nastaliq Urdu', 'Inter', sans-serif; padding: 30px; background: white; width: 790px; margin: 0 auto; box-sizing: border-box;">
+      <div style="direction: rtl; text-align: right; background: white; width: 750px; margin: 0 auto; padding: 35px; box-sizing: border-box; -webkit-print-color-adjust: exact;">
+        
+        <!-- Header with completely static rendering font configuration -->
         <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #7b2c1a; padding-bottom: 15px;">
-          <h1 style="color: #7b2c1a; margin: 0; font-size: 2.2rem; font-weight: 700;">⚖️ کیس رپورٹ</h1>
-          <p style="margin: 8px 0 0 0; color: #64748b; font-size: 0.9rem;">تاریخ رپورٹ: ${new Date().toLocaleDateString('ur-PK')}</p>
+          <h1 style="color: #7b2c1a; margin: 0; font-size: 2.3rem; font-family: 'Inter', Arial, sans-serif; font-weight: bold; letter-spacing: 0.5px;">کیس رپورٹ</h1>
+          <p style="margin: 10px 0 0 0; color: #64748b; font-size: 0.95rem; font-family: 'Inter', Arial, sans-serif;">رپورٹ تاریخ: ${new Date().toLocaleDateString('en-GB')}</p>
         </div>
         
-        <div style="background: #fef8ef; border-radius: 16px; padding: 20px; margin-bottom: 25px; border: 1px solid #f5e6d3;">
-          <h3 style="color: #7b2c1a; margin-top: 0; margin-bottom: 15px; font-size: 1.3rem; border-bottom: 1px solid #e0d5c0; padding-bottom: 5px;">کیس کی معلومات</h3>
-          <table style="width: 100%; border-collapse: collapse; font-size: 1rem; color: #1e293b;">
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9; width:30%;">مدعی</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.plaintiff)}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">مدعا علیہ</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.defendant)}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">جج</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.judge || '—')}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">مدافع</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.representing || '—')}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">کیس قسم</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.casetype || '—')}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">نوعیت</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${c.mainType === 'criminal' ? 'فوجداری' : 'سول'}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">کوڈ</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.code || '—')}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">فون</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;" dir="ltr">${escapeHtml(c.phone || '—')}</td></tr>
-            <tr><td style="padding:8px; font-weight:bold; border-bottom:1px solid #f1f5f9;">فائل نمبر</td><td style="padding:8px; border-bottom:1px solid #f1f5f9;">${escapeHtml(c.filenum || '—')}</td></tr>
+        <!-- Info Block Table Container -->
+        <div style="background: #fef8ef; border-radius: 16px; padding: 22px; margin-bottom: 30px; border: 1px solid #f5e6d3;">
+          <h3 style="color: #7b2c1a; margin-top: 0; margin-bottom: 15px; font-size: 1.25rem; font-family: 'Inter', Arial, sans-serif; font-weight: bold; border-bottom: 1px solid #e0d5c0; padding-bottom: 8px;">کیس کی معلومات</h3>
+          <table style="width: 100%; border-collapse: collapse; color: #1e293b; text-align: right;">
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem; width:28%;">مدعی</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.plaintiff)}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">مدعا علیہ</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.defendant)}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">جج</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.judge || '—')}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">مدافع</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.representing || '—')}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">کیس قسم</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${escapeHtml(c.casetype || '—')}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">نوعیت</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',sans-serif; font-size:1.05rem;">${c.mainType === 'criminal' ? 'فوجداری' : 'سول'}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">کوڈ</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Inter',sans-serif; font-size:1rem;">${escapeHtml(c.code || '—')}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">فون</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Inter',sans-serif; font-size:1rem;" dir="ltr">${escapeHtml(c.phone || '—')}</td></tr>
+            <tr><td style="padding:10px 8px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:'Inter',sans-serif; font-size:0.9rem;">فائل نمبر</td><td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; font-family:'Inter',sans-serif; font-size:1rem;">${escapeHtml(c.filenum || '—')}</td></tr>
             ${criminalRows}
           </table>
         </div>
         
-        <div style="background: white; padding: 10px 5px;">
-          <h3 style="color: #7b2c1a; margin-top: 0; margin-bottom: 15px; font-size: 1.3rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">📋 سماعتی تاریخچہ</h3>
-          <div style="font-size: 1rem; color: #334155;">
-            ${recordsHtml || '<p style="color:#94a3b8;">کوئی سماعت موجود نہیں</p>'}
+        <!-- Timeline Block Area -->
+        <div style="background: white;">
+          <h3 style="color: #7b2c1a; margin-top: 0; margin-bottom: 10px; font-size: 1.25rem; font-family: 'Inter', Arial, sans-serif; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">سماعتی تاریخچہ</h3>
+          <div style="color: #334155;">
+            ${recordsHtml || '<p style="color:#94a3b8; font-family:\'Inter\',sans-serif; font-size:0.95rem;">کوئی سماعت موجود نہیں</p>'}
           </div>
         </div>
         
-        <div style="margin-top: 50px; text-align: center; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <!-- Footer Info Box -->
+        <div style="margin-top: 60px; text-align: center; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; font-family: 'Inter', Arial, sans-serif;">
           وکیل کیس مینجمنٹ سسٹم سے خودکار تیار کردہ
         </div>
       </div>
     `;
     
-    // Crucial Fix: Create a visual but completely un-interactable container instead of display:none or -9999px position
+    // Inject sandbox container layout configuration
     const container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.bottom = '0';
@@ -424,21 +432,21 @@
     container.appendChild(element);
     document.body.appendChild(container);
     
-    // Fix for Infinix/Vivo: Allow the browser mobile render thread to settle and paint fonts correctly
+    // Give mobile canvas compilation thread 600ms buffer window
     setTimeout(async () => {
       try {
         const opt = {
-          margin: [0.4, 0.4, 0.4, 0.4],
+          margin: [0.3, 0.3, 0.3, 0.3],
           filename: `Case_${c.filenum || c.id}_${new Date().toISOString().slice(0,10)}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { 
             scale: 2, 
-            letterRendering: true, 
+            letterRendering: false, // Turned false to avoid splitting Arabic ligatures into fragmented chunks
             useCORS: true,
             logging: false,
             scrollX: 0,
             scrollY: 0,
-            windowWidth: 850 // Fixes horizontal layout breaks on mobile screen sizes
+            windowWidth: 760 // Matches static layout configuration precisely
           },
           jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
@@ -451,7 +459,7 @@
       } finally {
         document.body.removeChild(container);
       }
-    }, 450); // Safe threshold delay for slower processing mobile units
+    }, 600);
   };
 
   // ========== CRUD Functions ==========
@@ -594,7 +602,7 @@
   function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
   // Event listeners
-document.getElementById('globalSearch').addEventListener('input', (e) => { app.searchQuery = e.target.value; if(app.currentView==='list') renderCaseList(); });
+  document.getElementById('globalSearch').addEventListener('input', (e) => { app.searchQuery = e.target.value; if(app.currentView==='list') renderCaseList(); });
   document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ app.currentTab = btn.dataset.status; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); if(app.currentView==='list') renderCaseList(); else backToList(); renderStats(); }));
   document.getElementById('newCaseBtn').onclick = openAddCaseModal;
   document.getElementById('cancelModalBtn').onclick = closeModals;
