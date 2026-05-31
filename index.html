@@ -146,7 +146,7 @@
   <div id="detailArea" style="display: none;"></div>
 </div>
 
-<!-- Modal: Add/Edit Case -->
+<!-- Modals -->
 <div id="caseModal" class="modal-overlay"><div class="modal"><div class="modal-title" id="modalTitle">نیا کیس</div>
 <div style="margin-bottom:15px;">
   <label style="font-weight:600; margin-left:10px;">نوعیت (Case Nature):</label>
@@ -349,7 +349,7 @@
     renderCaseList();
   };
 
-  // ========== MODERATE MARGINS MS WORD EXPORTER FUNCTION ==========
+  // ========== FIXED ABSOLUTE MS WORD EXPORTER FUNCTION ==========
   window.downloadCaseWord = function (caseId) {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -359,15 +359,15 @@
     const recordsHtml = sorted.map(rec => `
       <div style="border-bottom: 1px solid #e2e8f0; padding: 12px 0;">
         <strong style="font-family: Arial, sans-serif; font-size: 14px; color: #7b2c1a;">📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong><br>
-        <p style="margin: 6px 0 0 0; font-family: 'Noto Nastaliq Urdu', 'Arial Custom', serif; font-size: 16px; line-height: 1.8; color: #1e293b; mso-line-height-rule: exactly;">${escapeHtml(rec.note) || '—'}</p>
+        <p style="margin: 6px 0 0 0; font-family: 'Noto Nastaliq Urdu', Arial, sans-serif; font-size: 16px; line-height: 1.8; color: #1e293b; mso-line-height-rule: exactly;">${escapeHtml(rec.note) || '—'}</p>
       </div>
     `).join('');
     
     let criminalRows = '';
     if (c.criminalData) {
-      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif; width:30%;">پولیس اسٹیشن</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
-      if (c.criminalData.firNo) criminalRows += `<tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">FIR نمبر</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.criminalData.firNo)}</td></tr>`;
-      if (c.criminalData.offences) criminalRows += `<tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">جرائم/دفعات</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px; line-height: 1.8;">${escapeHtml(c.criminalData.offences)}</td></tr>`;
+      if (c.criminalData.policeStation) criminalRows += `<tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif; width:30%;">پولیس اسٹیشن</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.criminalData.policeStation)}</td></tr>`;
+      if (c.criminalData.firNo) criminalRows += `<tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">FIR نمبر</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.criminalData.firNo)}</td></tr>`;
+      if (c.criminalData.offences) criminalRows += `<tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">جرائم/دفعات</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px; line-height: 1.8;">${escapeHtml(c.criminalData.offences)}</td></tr>`;
     }
     
     const docHtml = `
@@ -382,33 +382,42 @@
             <w:Compatibility>
               <w:DoNotExpandShiftReturn/>
             </w:Compatibility>
+            <!-- Native MS Word Moderate Margin Geometry Definition (Top:1", Bottom:1", Left:0.75", Right:0.75") -->
+            <w:PageSetup>
+              <w:MarginTop>1440</w:MarginTop>
+              <w:MarginBottom>1440</w:MarginBottom>
+              <w:MarginLeft>1080</w:MarginLeft>
+              <w:MarginRight>1080</w:MarginRight>
+            </w:PageSetup>
           </w:WordDocument>
         </xml>
         <![endif]-->
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
-          @page WordSection1 {
+          @page {
             size: 8.5in 11.0in;
-            margin: 1.0in 0.75in 1.0in 0.75in; /* Moderate Margins Rule */
-            mso-header-margin: 0.5in;
-            mso-footer-margin: 0.5in;
-            mso-paper-source: 0;
-          }
-          div.WordSection1 {
-            page: WordSection1;
+            margin: 1.0in 0.75in 1.0in 0.75in;
           }
           body { 
             direction: rtl; 
             text-align: right; 
             font-family: 'Noto Nastaliq Urdu', Arial, sans-serif; 
             width: 100%;
+            padding: 0;
+            margin: 0;
+          }
+          .word-container {
+            width: 100%;
+            max-width: 100%;
+            direction: rtl;
+            text-align: right;
           }
         </style>
       </head>
       <body>
-        <div class="WordSection1" style="direction: rtl; text-align: right; width: 100%;">
+        <div class="word-container">
           
-          <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px;">
+          <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px; width: 100%;">
             <h1 style="color: #7b2c1a; margin: 0; font-size: 26px; font-family: Arial, sans-serif;">کیس رپورٹ</h1>
             <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px; font-family: Arial, sans-serif;">رپورٹ تاریخ: ${new Date().toLocaleDateString('en-GB')}</p>
           </div>
@@ -416,12 +425,12 @@
           <div style="background: #fef8ef; border-radius: 12px; padding: 15px; margin-bottom: 25px; border: 1px solid #f5e6d3; width: 100%;">
             <h3 style="color: #7b2c1a; margin-top: 0; margin-bottom: 10px; font-size: 18px; font-family: Arial, sans-serif; border-bottom: 1px solid #e0d5c0; padding-bottom: 5px;">کیس کی معلومات</h3>
             <table style="width: 100%; border-collapse: collapse; text-align: right;" cellpadding="0" cellspacing="0">
-              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif; width:30%;">مدعی</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.plaintiff)}</td></tr>
-              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">مدعا علیہ</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.defendant)}</td></tr>
-              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">جج</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.judge || '—')}</td></tr>
-              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">مدافع</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.representing || '—')}</td></tr>
-              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">کیس قسم</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${escapeHtml(c.casetype || '—')}</td></tr>
-              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">نوعیت</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',serif; font-size:16px;">${c.mainType === 'criminal' ? 'فوجداری' : 'سول'}</td></tr>
+              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif; width:30%;">مدعی</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.plaintiff)}</td></tr>
+              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">مدعا علیہ</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.defendant)}</td></tr>
+              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">جج</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.judge || '—')}</td></tr>
+              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">مدافع</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.representing || '—')}</td></tr>
+              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">کیس قسم</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${escapeHtml(c.casetype || '—')}</td></tr>
+              <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">نوعیت</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:'Noto Nastaliq Urdu',Arial,sans-serif; font-size:16px;">${c.mainType === 'criminal' ? 'فوجداری' : 'سول'}</td></tr>
               <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">کوڈ</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:Arial,sans-serif; font-size:14px;">${escapeHtml(c.code || '—')}</td></tr>
               <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">فون</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:Arial,sans-serif; font-size:14px;" dir="ltr">${escapeHtml(c.phone || '—')}</td></tr>
               <tr><td style="padding:10px; font-weight:bold; border-bottom:1px solid #e2e8f0; color:#475569; font-family:Arial,sans-serif;">فائل نمبر</td><td style="padding:10px; border-bottom:1px solid #e2e8f0; font-family:Arial,sans-serif; font-size:14px;">${escapeHtml(c.filenum || '—')}</td></tr>
@@ -436,7 +445,7 @@
             </div>
           </div>
           
-          <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; font-family: Arial, sans-serif;">
+          <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; font-family: Arial, sans-serif; width: 100%;">
             وکیل کیس مینجمنٹ سسٹم سے خودکار تیار کردہ
           </div>
         </div>
