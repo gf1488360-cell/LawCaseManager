@@ -363,7 +363,7 @@
     renderCaseList();
   };
 
-// ================= سنگل کیس رپورٹ پرنٹنگ (HTML2PDF فکسڈ اور ٹیسٹڈ ورژن) =================
+// ================= سنگل کیس رپورٹ پرنٹنگ (ڈوم اوورلے فکسڈ ورژن) =================
   window.printSingleCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -375,27 +375,36 @@
       </div>
     `).join('');
 
+    // ایک ہائی انڈیکس اوورلے کنٹینر بنائیں تاکہ یہ اسکرین پر دکھائی دے لیکن دوسرے مواد کے اوپر صاف رینڈر ہو
+    const containerOverlay = document.createElement('div');
+    containerOverlay.style.position = 'fixed';
+    containerOverlay.style.top = '0';
+    containerOverlay.style.left = '0';
+    containerOverlay.style.width = '100%';
+    containerOverlay.style.height = '100%';
+    containerOverlay.style.backgroundColor = '#fff'; // سفید پس منظر
+    containerOverlay.style.zIndex = '99999'; // سب سے اوپر لانے کے لیے ہائی انڈیکس
+    containerOverlay.style.overflowY = 'auto';
+    containerOverlay.style.padding = '20px';
+    containerOverlay.style.boxSizing = 'border-box';
+
     const template = document.createElement('div');
     template.dir = 'rtl';
-    
-    // عناصر کو پس منظر میں رینڈر کرنے اور چوڑائی کو درست رکھنے کی سیٹنگز
-    template.style.position = 'absolute';
-    template.style.left = '-9999px';
-    template.style.top = '0';
-    template.style.width = '750px'; 
-    template.style.padding = '30px';
+    template.style.width = '100%'; 
+    template.style.maxWidth = '700px'; 
+    template.style.margin = '0 auto';
     template.style.background = '#fff';
     template.style.fontFamily = "'Noto Nastaliq Urdu', Arial, sans-serif";
     
     template.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px; direction: rtl;">
-        <h1 style="color: #7b2c1a; margin: 0; font-size: 22px;">⚖️ تفصیلی کیس فائل رپورٹ</h1>
+        <h1 style="color: #7b2c1a; margin: 0; font-size: 20px;">⚖️ تفصیلی کیس فائل رپورٹ</h1>
         <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b; font-family: Arial;">رپورٹ جنریٹ تاریخ: ${new Date().toLocaleDateString('en-GB')}</p>
       </div>
       <div style="background: #fefaf4; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eedfc8; direction: rtl; text-align: right;">
-        <h3 style="color: #7b2c1a; margin: 0 0 10px 0; font-size: 15px; border-bottom: 1px solid #e2d2b6; padding-bottom: 4px;">بنیادی معلومات</h3>
+        <h3 style="color: #7b2c1a; margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #e2d2b6; padding-bottom: 4px;">بنیادی معلومات</h3>
         <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; direction: rtl;">
-          <tr><td style="padding: 6px; font-weight: bold; color: #475569; width: 25%;">عنوان مقدمہ:</td><td style="padding: 6px;">${escapeHtml(c.plaintiff)} بنام ${escapeHtml(c.defendant)}</td></tr>
+          <tr><td style="padding: 6px; font-weight: bold; color: #475569; width: 30%;">عنوان مقدمہ:</td><td style="padding: 6px;">${escapeHtml(c.plaintiff)} بنام ${escapeHtml(c.defendant)}</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">عدالت عالیہ / جج:</td><td style="padding: 6px;">${escapeHtml(c.judge || '—')}</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">کیس کی قسم:</td><td style="padding: 6px;">${c.mainCaseType === 'criminal' ? 'فوجداری' : 'سول'} (${escapeHtml(c.casetype || '—')})</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">فائل نمبر آفس:</td><td style="padding: 6px; font-family: Arial;">${escapeHtml(c.filenum || '—')}</td></tr>
@@ -408,13 +417,13 @@
         </table>
       </div>
       <div style="direction: rtl; text-align: right;">
-        <h3 style="color: #7b2c1a; font-size: 15px; border-bottom: 2px solid #7b2c1a; padding-bottom: 4px; margin-bottom: 10px;">📋 سماعتی پیشیوں کی تفصیلات</h3>
+        <h3 style="color: #7b2c1a; font-size: 14px; border-bottom: 2px solid #7b2c1a; padding-bottom: 4px; margin-bottom: 10px;">📋 سماعتی پیشیوں کی تفصیلات</h3>
         ${recordsHtml || '<p style="color: #94a3b8; font-size: 13px;">کوئی تاریخ ریکارڈ موجود نہیں ہے۔</p>'}
       </div>
     `;
 
-    // ایلیمنٹ کو عارضی طور پر ڈوم (DOM) سٹرکچر میں انجیکٹ کریں
-    document.body.appendChild(template);
+    containerOverlay.appendChild(template);
+    document.body.appendChild(containerOverlay);
 
     const opt = {
       margin: [0.5, 0.5, 0.5, 0.5],
@@ -424,23 +433,29 @@
         scale: 2, 
         useCORS: true,
         logging: false,
-        letterRendering: true
+        scrollY: 0,
+        scrollX: 0
       },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    // صرف 150 ملی سیکنڈ کا وقفہ دیں تاکہ فونٹ اور ٹیبل مکمل لوڈ ہو سکیں، پھر پرنٹ کریں
+    // اوورلے کی وجہ سے انجن کو ایلیمنٹ رینڈر کرنا ہی پڑے گا، 200ms کا وقت دیں تاکہ ڈرا مکمل ہو جائے
     setTimeout(() => {
       html2pdf().set(opt).from(template).save().then(() => {
-        document.body.removeChild(template);
+        document.body.removeChild(containerOverlay);
       }).catch((err) => {
-        console.error("PDF Engine Error:", err);
-        document.body.removeChild(template);
+        console.error("PDF engine error: ", err);
+        document.body.removeChild(containerOverlay);
       });
-    }, 150);
+    }, 200);
 
     showToast('پی ڈی ایف ڈاؤن لوڈ شروع ہو گیا ہے');
   };
+
+
+
+
+  
   // ================= ورڈ مائیکروسافٹ فارمیٹ ڈاؤن لوڈ لاجک =================
   window.downloadSingleCaseDoc = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
