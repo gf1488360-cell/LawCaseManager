@@ -363,13 +363,13 @@
     renderCaseList();
   };
 
-  // ================= سنگل کیس رپورٹ پرنٹنگ (HTML2PDF ورژن) =================
+// ================= سنگل کیس رپورٹ پرنٹنگ (HTML2PDF فکسڈ ورژن) =================
   window.printSingleCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
     const sorted = [...c.records].sort((a,b) => new Date(a.date) - new Date(b.date));
     const recordsHtml = sorted.map(rec => `
-      <div style="border-bottom: 1px solid #cbd5e1; padding: 10px 0;">
+      <div style="border-bottom: 1px solid #cbd5e1; padding: 10px 0; text-align: right;">
         <strong style="font-family: Arial, sans-serif; font-size: 13px; color: #7b2c1a;">📅 ${new Date(rec.date).toLocaleDateString('en-GB')}</strong>
         <p style="margin: 4px 0 0 0; font-size: 14px; line-height: 1.7; color: #334155;">${escapeHtml(rec.note) || '—'}</p>
       </div>
@@ -377,18 +377,22 @@
 
     const template = document.createElement('div');
     template.dir = 'rtl';
+    // ہم نے عارضی طور پر اسے نظروں سے دور رکھنے اور ویب ویو میں مکمل چوڑائی دینے کے لیے اسٹائلنگ دی ہے
+    template.style.position = 'absolute';
+    template.style.left = '-9999px';
+    template.style.width = '800px'; 
     template.style.padding = '30px';
     template.style.background = '#fff';
     template.style.fontFamily = "'Noto Nastaliq Urdu', Arial, sans-serif";
     
     template.innerHTML = `
-      <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px;">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px; direction: rtl;">
         <h1 style="color: #7b2c1a; margin: 0; font-size: 22px;">⚖️ تفصیلی کیس فائل رپورٹ</h1>
         <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b; font-family: Arial;">رپورٹ جنریٹ تاریخ: ${new Date().toLocaleDateString('en-GB')}</p>
       </div>
-      <div style="background: #fefaf4; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eedfc8;">
+      <div style="background: #fefaf4; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eedfc8; direction: rtl;">
         <h3 style="color: #7b2c1a; margin: 0 0 10px 0; font-size: 15px; border-bottom: 1px solid #e2d2b6; padding-bottom: 4px;">بنیادی معلومات</h3>
-        <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 13px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; direction: rtl;">
           <tr><td style="padding: 6px; font-weight: bold; color: #475569; width: 25%;">عنوان مقدمہ:</td><td style="padding: 6px;">${escapeHtml(c.plaintiff)} بنام ${escapeHtml(c.defendant)}</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">عدالت عالیہ / جج:</td><td style="padding: 6px;">${escapeHtml(c.judge || '—')}</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">کیس کی قسم:</td><td style="padding: 6px;">${c.mainCaseType === 'criminal' ? 'فوجداری' : 'سول'} (${escapeHtml(c.casetype || '—')})</td></tr>
@@ -401,23 +405,37 @@
           ` : ''}
         </table>
       </div>
-      <div>
+      <div style="direction: rtl; text-align: right;">
         <h3 style="color: #7b2c1a; font-size: 15px; border-bottom: 2px solid #7b2c1a; padding-bottom: 4px; margin-bottom: 10px;">📋 سماعتی پیشیوں کی تفصیلات</h3>
         ${recordsHtml || '<p style="color: #94a3b8; font-size: 13px;">کوئی تاریخ ریکارڈ موجود نہیں ہے۔</p>'}
       </div>
     `;
 
+    // لازمی مرحلہ: جیو میٹرک رینڈرنگ کے لیے اسے عارضی طور پر باڈی کا حصہ بنائیں
+    document.body.appendChild(template);
+
     const opt = {
-      margin: [0.75, 0.75, 0.75, 0.75],
+      margin: [0.5, 0.5, 0.5, 0.5],
       filename: `کیس_رپورٹ_${c.filenum || 'آفس'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true,
+        width: 800 // کینوس کے اسکیل کو ویو پورٹ کے مطابق لاک کر دیا گیا ہے
+      },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    html2pdf().from(template).save();
+
+    // پی ڈی ایف جنریٹ ہونے کے بعد باڈی سے مستقل صاف کریں
+    html2pdf().set(opt).from(template).save().then(() => {
+      document.body.removeChild(template);
+    }).catch((err) => {
+      console.error("PDF generation error: ", err);
+      document.body.removeChild(template);
+    });
+
     showToast('پی ڈی ایف ڈاؤن لوڈ شروع ہو گیا ہے');
   };
-
   // ================= ورڈ مائیکروسافٹ فارمیٹ ڈاؤن لوڈ لاجک =================
   window.downloadSingleCaseDoc = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
