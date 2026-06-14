@@ -198,7 +198,37 @@
 
 <div id="toastMsg" class="toast"></div>
 
-<script>
+<script type="module">
+  // 1. Import Firebase SDKs via CDN
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // 2. Your Web Configuration Credentials
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaE34Eb6TxeW9P5-qNgcYCZmw3ExpxQ8s",
+    authDomain: "lawcasemanager-86769.firebaseapp.com",
+    projectId: "lawcasemanager-86769",
+    storageBucket: "lawcasemanager-86769.firebasestorage.app",
+    messagingSenderId: "47182500436",
+    appId: "1:47182500436:web:3f5d832c5712fbde0753c1",
+    measurementId: "G-PQNRZW8DGM"
+  };
+
+  // 3. Initialize Connection & Enable Offline Storage Caching
+  const firebaseApp = initializeApp(firebaseConfig);
+  const db = getFirestore(firebaseApp);
+
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code == 'failed-precondition') {
+        console.warn("Offline cache activated in single-tab mode.");
+    }
+  });
+
+  const docRef = doc(db, "lawyer_management", "global_cases");
+
+  // 4. Retain Your Original Application State Variables
   let app = {
     cases: [],
     currentTab: 'active',
@@ -226,29 +256,38 @@
     sel.innerHTML = months.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
   }
 
-  function saveData() { localStorage.setItem('lawyer_case_system_v2', JSON.stringify(app.cases)); }
-  
-  function loadData() {
-    const raw = localStorage.getItem('lawyer_case_system_v2');
-    if (raw) {
-      app.cases = JSON.parse(raw);
-      app.cases.forEach(c => {
-        if (!c.records) c.records = [];
-        if (!c.status) c.status = 'active';
-        if (!c.mainCaseType) c.mainCaseType = 'civil';
-      });
-    } else {
-      app.cases = [{
-        id: 'c1', mainCaseType: 'civil', plaintiff: 'محمد اکرم خان', defendant: 'صوبائی حکومت وغیرہ', judge: 'جناب سینیئر سول جج صاحب لاہور', representing: 'مدعی الائنس',
-        casetype: 'تعمیل مختص (Specific Performance)', code: '99', phone: '03007654321', filenum: '2026/A-4', status: 'active',
-        firNum: '', policeStation: '', offence: '',
-        records: [
-          { id: 'r1', date: '2026-05-10', month: '2026-05', note: 'جواب دعویٰ داخل کرنے کا آخری موقع دیا گیا ہے۔' },
-          { id: 'r2', date: new Date().toISOString().slice(0,10), month: new Date().toISOString().slice(0,7), note: 'آج بحث ابتدائی حکم امتناعی کے لیے مقرر ہے۔' }
-        ]
-      }];
-      saveData();
+  // 5. UPGRADED: Cloud Auto-Sync Data Handlers
+  async function saveData() { 
+    localStorage.setItem('lawyer_case_system_v2', JSON.stringify(app.cases)); 
+    try {
+      await setDoc(docRef, { cases: app.cases }, { merge: true });
+    } catch (error) {
+      console.error("Cloud storage sync failed: ", error);
     }
+  }
+  
+  async function loadData() {
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().cases) {
+        app.cases = docSnap.data().cases;
+      } else {
+        const raw = localStorage.getItem('lawyer_case_system_v2');
+        if (raw) app.cases = JSON.parse(raw);
+      }
+    } catch (error) {
+      console.warn("Offline fallback: Loading backup from local storage context.");
+      const raw = localStorage.getItem('lawyer_case_system_v2');
+      if (raw) app.cases = JSON.parse(raw);
+    }
+
+    app.cases.forEach(c => {
+      if (!c.records) c.records = [];
+      if (!c.status) c.status = 'active';
+      if (!c.mainCaseType) c.mainCaseType = 'civil';
+    });
+
+    renderCaseList();
   }
 
   function showToast(msg) { const t = document.getElementById('toastMsg'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
@@ -363,7 +402,6 @@
     renderCaseList();
   };
 
-// ================= سنگل کیس رپورٹ پرنٹنگ (ڈوم اوورلے فکسڈ ورژن) =================
   window.printSingleCasePDF = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -375,88 +413,62 @@
       </div>
     `).join('');
 
-    // ایک ہائی انڈیکس اوورلے کنٹینر بنائیں تاکہ یہ اسکرین پر دکھائی دے لیکن دوسرے مواد کے اوپر صاف رینڈر ہو
     const containerOverlay = document.createElement('div');
     containerOverlay.style.position = 'fixed';
-    containerOverlay.style.top = '0';
-    containerOverlay.style.left = '0';
-    containerOverlay.style.width = '100%';
-    containerOverlay.style.height = '100%';
-    containerOverlay.style.backgroundColor = '#fff'; // سفید پس منظر
-    containerOverlay.style.zIndex = '99999'; // سب سے اوپر لانے کے لیے ہائی انڈیکس
-    containerOverlay.style.overflowY = 'auto';
-    containerOverlay.style.padding = '20px';
-    containerOverlay.style.boxSizing = 'border-box';
+    containerOverlay.style.top = '0'; containerOverlay.style.left = '0';
+    containerOverlay.style.width = '100%'; containerOverlay.style.height = '100%';
+    containerOverlay.style.backgroundColor = '#fff'; containerOverlay.style.zIndex = '99999';
+    containerOverlay.style.overflowY = 'auto'; containerOverlay.style.padding = '20px';
 
     const template = document.createElement('div');
-    template.dir = 'rtl';
-    template.style.width = '100%'; 
-    template.style.maxWidth = '700px'; 
-    template.style.margin = '0 auto';
-    template.style.background = '#fff';
-    template.style.fontFamily = "'Noto Nastaliq Urdu', Arial, sans-serif";
+    template.dir = 'rtl'; template.style.width = '100%'; template.style.maxWidth = '700px'; template.style.margin = '0 auto';
+    template.style.background = '#fff'; template.style.fontFamily = "'Noto Nastaliq Urdu', Arial, sans-serif";
     
     template.innerHTML = `
-      <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px; direction: rtl;">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px;">
         <h1 style="color: #7b2c1a; margin: 0; font-size: 20px;">⚖️ تفصیلی کیس فائل رپورٹ</h1>
-        <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b; font-family: Arial;">رپورٹ جنریٹ تاریخ: ${new Date().toLocaleDateString('en-GB')}</p>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">رپورٹ جنریٹ تاریخ: ${new Date().toLocaleDateString('en-GB')}</p>
       </div>
-      <div style="background: #fefaf4; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eedfc8; direction: rtl; text-align: right;">
+      <div style="background: #fefaf4; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eedfc8;">
         <h3 style="color: #7b2c1a; margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #e2d2b6; padding-bottom: 4px;">بنیادی معلومات</h3>
-        <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; direction: rtl;">
+        <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 13px;">
           <tr><td style="padding: 6px; font-weight: bold; color: #475569; width: 30%;">عنوان مقدمہ:</td><td style="padding: 6px;">${escapeHtml(c.plaintiff)} بنام ${escapeHtml(c.defendant)}</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">عدالت عالیہ / جج:</td><td style="padding: 6px;">${escapeHtml(c.judge || '—')}</td></tr>
           <tr><td style="padding: 6px; font-weight: bold; color: #475569;">کیس کی قسم:</td><td style="padding: 6px;">${c.mainCaseType === 'criminal' ? 'فوجداری' : 'سول'} (${escapeHtml(c.casetype || '—')})</td></tr>
-          <tr><td style="padding: 6px; font-weight: bold; color: #475569;">فائل نمبر آفس:</td><td style="padding: 6px; font-family: Arial;">${escapeHtml(c.filenum || '—')}</td></tr>
-          <tr><td style="padding: 6px; font-weight: bold; color: #475569;">فون نمبر موکل:</td><td style="padding: 6px; font-family: Arial;" dir="ltr">${escapeHtml(c.phone || '—')}</td></tr>
+          <tr><td style="padding: 6px; font-weight: bold; color: #475569;">فائل نمبر آفس:</td><td style="padding: 6px;">${escapeHtml(c.filenum || '—')}</td></tr>
+          <tr><td style="padding: 6px; font-weight: bold; color: #475569;">فون نمبر موکل:</td><td style="padding: 6px;" dir="ltr">${escapeHtml(c.phone || '—')}</td></tr>
           ${c.mainCaseType === 'criminal' ? `
-            <tr><td style="padding: 6px; font-weight: bold; color: #475569;">ایف آئی آر نمبر:</td><td style="padding: 6px; font-family: Arial;">${escapeHtml(c.firNum || '—')}</td></tr>
+            <tr><td style="padding: 6px; font-weight: bold; color: #475569;">ایف آئی آر نمبر:</td><td style="padding: 6px;">${escapeHtml(c.firNum || '—')}</td></tr>
             <tr><td style="padding: 6px; font-weight: bold; color: #475569;">تلقہ تھانہ:</td><td style="padding: 6px;">${escapeHtml(c.policeStation || '—')}</td></tr>
             <tr><td style="padding: 6px; font-weight: bold; color: #475569;">جرم / دفعات:</td><td style="padding: 6px;">${escapeHtml(c.offence || '—')}</td></tr>
           ` : ''}
         </table>
       </div>
-      <div style="direction: rtl; text-align: right;">
+      <div>
         <h3 style="color: #7b2c1a; font-size: 14px; border-bottom: 2px solid #7b2c1a; padding-bottom: 4px; margin-bottom: 10px;">📋 سماعتی پیشیوں کی تفصیلات</h3>
         ${recordsHtml || '<p style="color: #94a3b8; font-size: 13px;">کوئی تاریخ ریکارڈ موجود نہیں ہے۔</p>'}
-      </div>
-    `;
+      </div>`;
 
     containerOverlay.appendChild(template);
     document.body.appendChild(containerOverlay);
 
     const opt = {
-      margin: [0.5, 0.5, 0.5, 0.5],
-      filename: `کیس_رپورٹ_${c.filenum || 'آفس'}.pdf`,
+      margin: [0.5, 0.5, 0.5, 0.5], filename: `کیس_رپورٹ_${c.filenum || 'آفس'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        scrollY: 0,
-        scrollX: 0
-      },
+      html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0 },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    // اوورلے کی وجہ سے انجن کو ایلیمنٹ رینڈر کرنا ہی پڑے گا، 200ms کا وقت دیں تاکہ ڈرا مکمل ہو جائے
     setTimeout(() => {
       html2pdf().set(opt).from(template).save().then(() => {
         document.body.removeChild(containerOverlay);
       }).catch((err) => {
-        console.error("PDF engine error: ", err);
         document.body.removeChild(containerOverlay);
       });
     }, 200);
-
     showToast('پی ڈی ایف ڈاؤن لوڈ شروع ہو گیا ہے');
   };
 
-
-
-
-  
-  // ================= ورڈ مائیکروسافٹ فارمیٹ ڈاؤن لوڈ لاجک =================
   window.downloadSingleCaseDoc = (caseId) => {
     const c = app.cases.find(x => x.id === caseId);
     if (!c) return;
@@ -488,15 +500,13 @@
         <h3>📋 پیشیوں کی تفصیل</h3>
         ${recordsHtml}
       </div>
-      </body></html>
-    `;
+      </body></html>`;
     const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `کیس_رپورٹ_${c.filenum || 'آفس'}.doc`; a.click();
   };
 
-  // ================= منتخب تاریخ کی تمام سماعتیں اور کیسز پرنٹ کرنے کا نیا لاجک =================
   window.printCalendarHearingsPDF = (date) => {
     const hearings = [];
     app.cases.forEach(c => {
@@ -504,10 +514,7 @@
         if (rec.date === date) {
           hearings.push({
             caseName: `${c.plaintiff || '?'} بنام ${c.defendant || '?'}`,
-            judge: c.judge,
-            casetype: c.casetype,
-            filenum: c.filenum,
-            note: rec.note,
+            judge: c.judge, casetype: c.casetype, filenum: c.filenum, note: rec.note,
             mainType: c.mainCaseType === 'criminal' ? 'فوجداری' : 'سول'
           });
         }
@@ -523,7 +530,7 @@
       <tr>
         <td style="padding:10px; border:1px solid #cbd5e1; text-align:center; font-family:Arial; font-weight:bold;">${index + 1}</td>
         <td style="padding:10px; border:1px solid #cbd5e1; font-weight:bold; font-size:14px; color:#1e293b;">${escapeHtml(h.caseName)}</td>
-        <td style="padding:10px; border:1px solid #cbd5e1; font-size:13px; font-family:Arial;">${escapeHtml(h.filenum || '—')}</td>
+        <td style="padding:10px; border:1px solid #cbd5e1; font-size:13px;">${escapeHtml(h.filenum || '—')}</td>
         <td style="padding:10px; border:1px solid #cbd5e1; font-size:13px;">${escapeHtml(h.judge || '—')}</td>
         <td style="padding:10px; border:1px solid #cbd5e1; font-size:13px; color:#475569;">${h.mainType} (${escapeHtml(h.casetype || '—')})</td>
         <td style="padding:10px; border:1px solid #cbd5e1; font-size:13px; line-height:1.6; color:#334155;">${escapeHtml(h.note || '—')}</td>
@@ -531,51 +538,39 @@
     `).join('');
 
     const template = document.createElement('div');
-    template.dir = 'rtl';
-    template.style.padding = '30px';
-    template.style.background = '#fff';
-    template.style.fontFamily = "'Noto Nastaliq Urdu', Arial, sans-serif";
+    template.dir = 'rtl'; template.style.padding = '30px'; template.style.background = '#fff'; template.style.fontFamily = "'Noto Nastaliq Urdu', Arial, sans-serif";
 
     template.innerHTML = `
       <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #7b2c1a; padding-bottom: 10px;">
         <h1 style="color: #7b2c1a; margin: 0; font-size: 24px;">📅 روزانہ سماعتوں کی کاز لسٹ (Daily Hearings List)</h1>
-        <p style="margin: 5px 0 0 0; font-size: 14px; font-family: Arial; font-weight: bold; color: #475569;">
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">
           سماعت کی تاریخ: ${new Date(date).toLocaleDateString('en-GB')} | کل مقدمات برائے سماعت: ${hearings.length}
         </p>
       </div>
       <table style="width:100%; border-collapse:collapse; text-align:right;">
         <thead>
           <tr style="background:#f1f5f9;">
-            <th style="padding:10px; border:1px solid #cbd5e1; width:5%; text-align:center; font-size:13px;">نمبر</th>
-            <th style="padding:10px; border:1px solid #cbd5e1; width:25%; font-size:13px;">عنوان مقدمہ</th>
-            <th style="padding:10px; border:1px solid #cbd5e1; width:12%; font-size:13px;">فائل نمبر</th>
-            <th style="padding:10px; border:1px solid #cbd5e1; width:18%; font-size:13px;">عدالت / جج</th>
-            <th style="padding:10px; border:1px solid #cbd5e1; width:18%; font-size:13px;">کیس زمرہ / قسم</th>
-            <th style="padding:10px; border:1px solid #cbd5e1; width:22%; font-size:13px;">کارروائی / نوٹ سماعت</th>
+            <th style="padding:10px; border:1px solid #cbd5e1; width:5%; text-align:center;">نمبر</th>
+            <th style="padding:10px; border:1px solid #cbd5e1; width:25%;">عنوان مقدمہ</th>
+            <th style="padding:10px; border:1px solid #cbd5e1; width:12%;">فائل نمبر</th>
+            <th style="padding:10px; border:1px solid #cbd5e1; width:18%;">عدالت / جج</th>
+            <th style="padding:10px; border:1px solid #cbd5e1; width:18%;">کیس زمرہ / قسم</th>
+            <th style="padding:10px; border:1px solid #cbd5e1; width:22%;">کارروائی / نوٹ سماعت</th>
           </tr>
         </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
-      <div style="text-align: center; margin-top: 30px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; font-family: Arial;">
-        آفس مینجمنٹ سسٹم سے خودکار تیار کردہ یومیہ کاز لسٹ رپورٹ
-      </div>
-    `;
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
 
     const opt = {
-      margin: [0.5, 0.5, 0.5, 0.5],
-      filename: `کاز_لسٹ_${date}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' } // لینڈ اسکیپ زیادہ بہتر کالم ویو دیتا ہے
+      margin: [0.5, 0.5, 0.5, 0.5], filename: `کاز_لسٹ_${date}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
     };
 
     html2pdf().from(template).save();
     showToast('کاز لسٹ پی ڈی ایف ڈاؤن لوڈ شروع ہو گئی ہے');
   };
 
-  // ================= باقی سپورٹنگ کنٹرولرز =================
   function openAddCaseModal() {
     app.editCaseId = null;
     document.getElementById('caseModalTitle').innerText = '➕ نیا کیس ریکارڈ درج کریں';
@@ -584,8 +579,7 @@
     document.getElementById('casetype').value = ''; document.getElementById('code').value = '';
     document.getElementById('phone').value = ''; document.getElementById('filenum').value = '';
     document.getElementById('firNum').value = ''; document.getElementById('policeStation').value = '';
-    document.getElementById('offence').value = '';
-    document.getElementById('mainCaseType').value = 'civil';
+    document.getElementById('offence').value = ''; document.getElementById('mainCaseType').value = 'civil';
     document.getElementById('criminalFields').style.display = 'none';
     document.getElementById('caseModal').classList.add('open');
   }
@@ -607,7 +601,6 @@
     document.getElementById('firNum').value = c.firNum || '';
     document.getElementById('policeStation').value = c.policeStation || '';
     document.getElementById('offence').value = c.offence || '';
-    
     document.getElementById('criminalFields').style.display = c.mainCaseType === 'criminal' ? 'block' : 'none';
     document.getElementById('caseModal').classList.add('open');
   };
@@ -712,7 +705,6 @@
     app.pendingDeleteCaseId = null;
   }
 
-  // کیلنڈر فلٹر پلس ون کلک کاز لسٹ پرنٹ کنٹرولر
   function openCalendar() {
     const today = new Date().toISOString().slice(0,10);
     document.getElementById('calendarDatePicker').value = today;
@@ -731,9 +723,7 @@
           hearings.push({
             caseId: c.id,
             caseName: `${c.plaintiff} بنام ${c.defendant}`,
-            judge: c.judge,
-            filenum: c.filenum,
-            note: rec.note
+            judge: c.judge, filenum: c.filenum, note: rec.note
           });
         }
       });
@@ -745,7 +735,6 @@
       return;
     }
 
-    // اگر ڈیٹا موجود ہے تو پرنٹ کاز لسٹ کا بٹن آن کریں
     printBtn.style.display = 'block';
     printBtn.onclick = () => printCalendarHearingsPDF(date);
 
@@ -770,10 +759,12 @@
     if (app.currentView === 'list') renderCaseList(); else backToList();
   }
 
-  // ایونٹ لسنرز انیشلائزیشن
+  // Global Context Bindings
+  window.saveData = saveData;
+  window.loadData = loadData;
+
   document.addEventListener('DOMContentLoaded', () => {
-    loadData();
-    renderCaseList();
+    loadData(); // Seamless cloud loading on startup
     
     document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.status)));
     document.getElementById('addNewCaseBtn').onclick = openAddCaseModal;
@@ -800,5 +791,6 @@
     document.getElementById('searchInput').addEventListener('input', updateSearch);
   });
 </script>
+
 </body>
 </html>
