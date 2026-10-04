@@ -20,6 +20,10 @@
     
     .calendar-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background: #fdf0e0; border: none; border-radius: 40px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; font-family: inherit; color: #7b2c1a; font-weight: bold; display: flex; align-items: center; gap: 4px; }
     
+    /* Header Notification Icon */
+    .notif-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #fdf0e0; border: none; border-radius: 40px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; font-family: inherit; color: #7b2c1a; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+    .notif-badge { background: #b13e28; color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.7rem; font-weight: bold; display: none; margin-right: 4px; }
+    
     .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
     .tab { flex: 1; text-align: center; padding: 10px 8px; background: #e8dfd1; border-radius: 40px; font-weight: 700; cursor: pointer; color: #4a3a26; font-size: 0.85rem; transition: 0.2s; }
     .tab.active { background: #7b2c1a; color: white; }
@@ -93,6 +97,11 @@
 <div class="container">
   <div class="header">
     <button class="calendar-icon" id="openCalendarBtn"><i class="fa-solid fa-calendar-days"></i> کیلنڈر</button>
+    <button class="notif-icon" id="openNotifBtn">
+      <i class="fa-solid fa-bell"></i>
+      <span class="notif-badge" id="notifBadge">0</span>
+      نوٹیفکیشن
+    </button>
     <h1>⚖️ وکیل کیس مینجمنٹ سسٹم</h1>
     <p>سول و فوجداری ریکارڈ کیپر پلس پرنٹنگ لاجک</p>
   </div>
@@ -196,6 +205,18 @@
   </div>
 </div>
 
+<!-- Notification Modal -->
+<div id="notifModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">🔔 زیر التواء اپ ڈیٹ کیسز (Pending Hearing Updates)</div>
+    <p style="font-size:0.8rem; color:#7b2c1a; margin-bottom:12px; text-align:center;">مندرجہ ذیل کیسز کی سماعت کی تاریخ آ چکی ہے لیکن نئی تاریخ یا اپ ڈیٹ درج نہیں کی گئی۔</p>
+    <div id="notifResults" class="calendar-list"></div>
+    <div class="flex-btns">
+      <button class="btn btn-secondary" id="closeNotifBtn">بند کریں</button>
+    </div>
+  </div>
+</div>
+
 <div id="toastMsg" class="toast"></div>
 
 <script type="module">
@@ -264,6 +285,7 @@
     } catch (error) {
       console.error("Cloud storage sync failed: ", error);
     }
+    updateNotifications();
   }
   
   async function loadData() {
@@ -288,6 +310,7 @@
     });
 
     renderCaseList();
+    updateNotifications();
   }
 
   function showToast(msg) { const t = document.getElementById('toastMsg'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
@@ -759,6 +782,65 @@
     if (app.currentView === 'list') renderCaseList(); else backToList();
   }
 
+  // --- Notification System Implementation ---
+  function getPendingUpdateCases() {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const pendingCases = [];
+
+    app.cases.forEach(c => {
+      if (c.status !== 'active' || !c.records || c.records.length === 0) return;
+
+      // Sort records chronologically
+      const sortedRecords = [...c.records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const latestRecord = sortedRecords[sortedRecords.length - 1];
+
+      // If the latest hearing date is today or in the past, it needs an update
+      if (latestRecord.date <= todayStr) {
+        pendingCases.push({
+          caseId: c.id,
+          caseName: `${c.plaintiff} بنام ${c.defendant}`,
+          judge: c.judge,
+          filenum: c.filenum,
+          lastDate: latestRecord.date,
+          lastNote: latestRecord.note
+        });
+      }
+    });
+
+    return pendingCases;
+  }
+
+  function updateNotifications() {
+    const pending = getPendingUpdateCases();
+    const badge = document.getElementById('notifBadge');
+    if (pending.length > 0) {
+      badge.innerText = pending.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function openNotificationModal() {
+    const pending = getPendingUpdateCases();
+    const resultsDiv = document.getElementById('notifResults');
+
+    if (!pending.length) {
+      resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#a48f6e;">✅ تمام کیسز اپ ڈیٹ ہیں۔ کوئی زیر التواء کیس موجود نہیں ہے۔</div>';
+    } else {
+      resultsDiv.innerHTML = pending.map(h => `
+        <div class="calendar-item" style="border-right-color:#b13e28;">
+          <div style="font-weight:700; color:#7b2c1a;">⚖️ ${escapeHtml(h.caseName)}</div>
+          <div style="font-size:0.8rem; margin:2px 0;"><b>سماعت تاریخ:</b> ${new Date(h.lastDate).toLocaleDateString('en-GB')} | <b>دفتر فائل:</b> ${escapeHtml(h.filenum || '—')}</div>
+          <div style="font-size:0.78rem; color:#4a3a26; background:#fff; padding:6px; border-radius:8px; margin-top:4px; border:1px solid #eedfc8;">📌 ${escapeHtml(h.lastNote || '—')}</div>
+          <button class="open-case-btn" onclick="openCaseFromCalendar('${h.caseId}')">⚖️ فائل کھولیں و اپ ڈیٹ کریں</button>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('notifModal').classList.add('open');
+  }
+
   // Global Context Bindings
   window.saveData = saveData;
   window.loadData = loadData;
@@ -777,6 +859,9 @@
     document.getElementById('openCalendarBtn').onclick = openCalendar;
     document.getElementById('closeCalendarBtn').onclick = () => document.getElementById('calendarModal').classList.remove('open');
     
+    document.getElementById('openNotifBtn').onclick = openNotificationModal;
+    document.getElementById('closeNotifBtn').onclick = () => document.getElementById('notifModal').classList.remove('open');
+
     document.getElementById('todayBtn').onclick = () => {
       const d = new Date().toISOString().slice(0,10);
       document.getElementById('calendarDatePicker').value = d;
